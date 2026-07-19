@@ -12,9 +12,6 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState('home'); 
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Sub-pestaña del Home (Descubrir, Biblioteca, Buscar)
-  const [homeSubTab, setHomeSubTab] = useState('descubrir');
-
   // Sub-pestaña activa dentro del Panel del Locutor (Zeno Tools Style)
   const [activeDashboardSection, setActiveDashboardSection] = useState('live');
 
@@ -111,7 +108,6 @@ export default function App() {
     setAutoDJPistas(autoDJPistas.filter(p => p.id !== id));
   };
 
-  // Filtrado de emisoras para la barra de búsqueda
   const estacionesFiltradas = estacionesFijas.filter(est => 
     est.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     est.genre.toLowerCase().includes(searchQuery.toLowerCase())
@@ -121,28 +117,44 @@ export default function App() {
     <div className="min-h-screen bg-[#05030a] text-slate-100 font-sans antialiased pb-32">
       <audio ref={audioRef} src={currentStation.streamUrl} />
 
-      {/* HEADER GLOBAL */}
+      {/* HEADER GLOBAL CON BOTONES INTEGRADOS ADELANTE */}
       <header className="sticky top-0 z-40 bg-[#05030a]/90 backdrop-blur-md border-b border-purple-950/20 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-8">
-          <div onClick={() => setCurrentTab('home')} className="flex items-center gap-3 cursor-pointer">
+        <div className="flex items-center gap-6">
+          <div onClick={() => setCurrentTab('home')} className="flex items-center gap-3 cursor-pointer shrink-0">
             <div className="bg-gradient-to-r from-fuchsia-500 via-purple-600 to-pink-500 p-2.5 rounded-xl shadow-lg">
-              <Radio className="w-6 h-6 text-white" />
+              <Radio className="w-5 h-5 text-white" />
             </div>
-            <span className="text-2xl font-black tracking-tight text-white">FreD</span>
+            <span className="text-xl font-black tracking-tight text-white">FreD</span>
           </div>
 
-          {/* Menú Superior con sub-barra de navegación integrada */}
-          <nav className="hidden md:flex items-center gap-2 text-sm font-medium text-slate-400">
-            <button onClick={() => { setCurrentTab('home'); setHomeSubTab('descubrir'); }} className={`px-4 py-2 rounded-xl transition ${currentTab === 'home' ? 'text-white bg-slate-900/40' : 'hover:text-white'}`}>Home</button>
-            <button onClick={() => setCurrentTab('pricing')} className={`px-4 py-2 rounded-xl transition ${currentTab === 'pricing' ? 'text-white bg-slate-900/40' : 'hover:text-white'}`}>Planes y Precios</button>
+          {/* NAVBAR CENTRAL: TODOS LOS BOTONES EN FILA INCLUYENDO DESCUBRIR, BIBLIOTECA Y BUSCAR */}
+          <nav className="hidden lg:flex items-center gap-1.5 text-xs font-bold text-slate-400">
+            <button onClick={() => setCurrentTab('home')} className={`px-3.5 py-2 rounded-xl transition ${currentTab === 'home' ? 'text-white bg-slate-900/60' : 'hover:text-white'}`}>Home</button>
+            <button onClick={() => setCurrentTab('pricing')} className={`px-3.5 py-2 rounded-xl transition ${currentTab === 'pricing' ? 'text-white bg-slate-900/60' : 'hover:text-white'}`}>Planes y Precios</button>
+            
+            <div className="h-4 w-[1px] bg-slate-800 mx-1"></div>
+
+            <button onClick={() => setCurrentTab('discover')} className={`px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 ${currentTab === 'discover' ? 'text-white bg-[#16122c] shadow' : 'hover:text-white'}`}>
+              <Compass className="w-3.5 h-3.5 text-purple-400" /> Descubrir
+            </button>
+            <button onClick={() => setCurrentTab('library')} className={`px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 ${currentTab === 'library' ? 'text-white bg-[#16122c] shadow' : 'hover:text-white'}`}>
+              <Library className="w-3.5 h-3.5 text-pink-400" /> Biblioteca
+            </button>
+            <button onClick={() => setCurrentTab('search_tab')} className={`px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 ${currentTab === 'search_tab' ? 'text-white bg-[#16122c] shadow' : 'hover:text-white'}`}>
+              <Search className="w-3.5 h-3.5 text-cyan-400" /> Buscar
+            </button>
+
             {user && hasPaymentMethod && (
-              <button onClick={() => setCurrentTab('dashboard')} className={`px-4 py-2 rounded-xl border border-purple-500/30 text-purple-400 flex items-center gap-1.5 ${currentTab === 'dashboard' ? 'bg-purple-950/30 text-white' : ''}`}><Sliders className="w-3.5 h-3.5" /> Panel Locutor</button>
+              <>
+                <div className="h-4 w-[1px] bg-slate-800 mx-1"></div>
+                <button onClick={() => setCurrentTab('dashboard')} className={`px-3.5 py-2 rounded-xl border border-purple-500/30 text-purple-400 flex items-center gap-1.5 ${currentTab === 'dashboard' ? 'bg-purple-950/30 text-white' : ''}`}><Sliders className="w-3.5 h-3.5" /> Panel Locutor</button>
+              </>
             )}
           </nav>
         </div>
 
-        {/* ACCIONES DEL HEADER */}
-        <div className="flex items-center gap-4">
+        {/* ACCIONES DERECHAS DEL HEADER */}
+        <div className="flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-3">
               <span className="text-xs bg-purple-950/40 border border-purple-500/20 px-4 py-2 rounded-full text-purple-300 font-medium">{user.email}</span>
@@ -167,131 +179,126 @@ export default function App() {
       {/* CUERPO PRINCIPAL */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         
-        {/* VISTA: HOME */}
+        {/* VISTA: HOME ORIGINAL LIMPIO */}
         {currentTab === 'home' && (
-          <div className="space-y-12">
-            
-            {/* HERO PRINCIPAL */}
+          <div className="space-y-16">
             <section className="bg-gradient-to-br from-purple-950/30 via-slate-950 to-slate-950 rounded-3xl border border-purple-500/10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
               <div className="max-w-xl space-y-6">
                 <span className="bg-pink-500/10 text-pink-400 text-xs font-bold px-3 py-1 rounded-full border border-pink-500/20 tracking-wider">PROBÁLO GRATIS POR 15 DÍAS</span>
                 <h2 className="text-4xl md:text-6xl font-black text-white leading-none tracking-tight">Crea tu radio online con <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">AutoDJ Avanzado</span></h2>
-                <p className="text-slate-400 text-sm leading-relaxed">Administra transmisiones en vivo, listas de reproducción inteligentes automatizadas y monetización directa desde un único panel lateral optimizado.</p>
+                <p className="text-slate-400 text-sm leading-relaxed">Administra transmisiones en vivo, listas de reproducción inteligentes automatizadas y monetización directa desde un único panel lateral optimizado de nivel industrial.</p>
                 <div className="flex flex-wrap gap-4 pt-2">
-                  <button onClick={() => setCurrentTab('pricing')} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black px-6 py-3 rounded-full text-sm shadow-xl hover:scale-105 transition duration-200">Ver Planes de Streaming</button>
+                  <button onClick={() => setCurrentTab('pricing')} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black px-6 py-3 rounded-full text-sm shadow-xl hover:scale-105 transition">Ver Planes de Streaming</button>
                 </div>
               </div>
               <div className="relative w-full md:w-1/2 max-w-sm flex justify-center">
-                <div className="absolute -inset-4 bg-purple-500/10 rounded-full blur-3xl"></div>
                 <div className="bg-slate-900/60 p-8 rounded-2xl border border-purple-500/10 backdrop-blur-xl relative w-full text-center space-y-4">
                   <RadioTower className="w-12 h-12 text-pink-500 mx-auto animate-pulse" />
-                  <div className="text-white font-black text-base">Red Icecast KH Activa</div>
+                  <div className="text-white font-black text-lg">Red Icecast KH Activa</div>
                 </div>
               </div>
             </section>
 
-            {/* BARRA DE NAVEGACIÓN EN HOME (¡RESTAURADA IDENTICA A TU CAPTURA!) */}
-            <div className="flex items-center gap-2 bg-[#0d0a1c]/60 p-1.5 rounded-2xl border border-slate-900 w-fit">
-              <button 
-                onClick={() => setHomeSubTab('descubrir')} 
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${homeSubTab === 'descubrir' ? 'bg-[#181334] text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
-              >
-                <Compass className="w-4 h-4 text-purple-400" /> Descubrir
-              </button>
-              <button 
-                onClick={() => setHomeSubTab('biblioteca')} 
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${homeSubTab === 'biblioteca' ? 'bg-[#181334] text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
-              >
-                <Library className="w-4 h-4 text-pink-400" /> Biblioteca
-              </button>
-              <button 
-                onClick={() => setHomeSubTab('buscar')} 
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${homeSubTab === 'buscar' ? 'bg-[#181334] text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
-              >
-                <Search className="w-4 h-4 text-cyan-400" /> Buscar
-              </button>
-            </div>
+            {/* SECCIÓN DE CARACTERÍSTICAS TÉCNICAS */}
+            <section className="space-y-6">
+              <h3 className="text-xl font-black text-white text-center">Infraestructura Diseñada para Emisores</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-2">
+                  <Zap className="w-5 h-5 text-purple-400" />
+                  <h4 className="font-bold text-white text-xs">Transmisión Inmediata</h4>
+                  <p className="text-[11px] text-slate-400">Soporte nativo para OBS, Butt y Mixxx.</p>
+                </div>
+                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-2">
+                  <Disc className="w-5 h-5 text-pink-400" />
+                  <h4 className="font-bold text-white text-xs">AutoDJ en la Nube</h4>
+                  <p className="text-[11px] text-slate-400">Automatiza listas las 24 horas del día.</p>
+                </div>
+                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-2">
+                  <BarChart3 className="w-5 h-5 text-cyan-400" />
+                  <h4 className="font-bold text-white text-xs">Métricas de Oyentes</h4>
+                  <p className="text-[11px] text-slate-400">Analíticas en tiempo real de tu audiencia.</p>
+                </div>
+                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-2">
+                  <DollarSign className="w-5 h-5 text-emerald-400" />
+                  <h4 className="font-bold text-white text-xs">Monetización</h4>
+                  <p className="text-[11px] text-slate-400">Inyección inteligente de anuncios de audio.</p>
+                </div>
+              </div>
+            </section>
+          </div>
+        )}
 
-            {/* SECCIÓN INTERNA BASADA EN EL BOTÓN SELECCIONADO EN EL HOME */}
-            <div className="bg-[#070512] border border-slate-900 rounded-2xl p-6 min-h-[250px]">
-              
-              {/* SUB-TAB: DESCUBRIR */}
-              {homeSubTab === 'descubrir' && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-black text-white">Emisoras Destacadas</h3>
-                    <p className="text-xs text-slate-400">Escucha los servidores con mayor flujo de oyentes en tiempo real.</p>
+        {/* VISTA: PESTAÑA INTEGRADA - DESCUBRIR */}
+        {currentTab === 'discover' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xl font-black text-white flex items-center gap-2"><Compass className="w-5 h-5 text-purple-400" /> Emisoras Destacadas</h3>
+              <p className="text-xs text-slate-400">Escucha los servidores con mayor flujo de oyentes en tiempo real.</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {estacionesFijas.map((est) => (
+                <div key={est.id} className="bg-slate-900/40 border border-slate-900 p-4 rounded-2xl flex items-center justify-between group hover:border-purple-500/20 transition">
+                  <div className="flex items-center gap-3">
+                    <img src={est.img} alt="" className="w-11 h-11 rounded-xl object-cover" />
+                    <div>
+                      <h4 className="font-bold text-xs text-white truncate max-w-[120px]">{est.title}</h4>
+                      <p className="text-[10px] text-slate-400 truncate">{est.genre}</p>
+                      <span className="text-[9px] font-mono text-purple-400 flex items-center gap-1 mt-0.5"><Users className="w-2.5 h-2.5" /> {est.oyentes}</span>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {estacionesFijas.map((est) => (
-                      <div key={est.id} className="bg-slate-900/40 border border-slate-900 p-4 rounded-2xl flex items-center justify-between group hover:border-purple-500/20 transition">
-                        <div className="flex items-center gap-3">
-                          <img src={est.img} alt="" className="w-11 h-11 rounded-xl object-cover" />
-                          <div>
-                            <h4 className="font-bold text-xs text-white truncate max-w-[120px]">{est.title}</h4>
-                            <p className="text-[10px] text-slate-400 truncate">{est.genre}</p>
-                            <span className="text-[9px] font-mono text-purple-400 flex items-center gap-1 mt-0.5"><Users className="w-2.5 h-2.5" /> {est.oyentes}</span>
-                          </div>
-                        </div>
-                        <button onClick={() => cambiarEstacionGlobal(est)} className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-200 group-hover:bg-white group-hover:text-slate-950 transition">
-                          {currentStation.id === est.id && isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
-                        </button>
+                  <button onClick={() => cambiarEstacionGlobal(est)} className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-200 group-hover:bg-white group-hover:text-slate-950 transition">
+                    {currentStation.id === est.id && isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* VISTA: PESTAÑA INTEGRADA - BIBLIOTECA */}
+        {currentTab === 'library' && (
+          <div className="space-y-4">
+            <h3 className="text-xl font-black text-white flex items-center gap-2"><Library className="w-5 h-5 text-pink-400" /> Tu Biblioteca</h3>
+            <p className="text-xs text-slate-400">Tus estaciones guardadas y favoritas aparecerán en este bloque.</p>
+            <div className="bg-slate-900/20 border border-dashed border-slate-800 rounded-xl p-12 text-center text-xs text-slate-500">
+              Sintoniza emisoras en la pestaña superior "Descubrir" para guardar elementos aquí.
+            </div>
+          </div>
+        )}
+
+        {/* VISTA: PESTAÑA INTEGRADA - BUSCAR */}
+        {currentTab === 'search_tab' && (
+          <div className="space-y-6">
+            <div className="max-w-md relative">
+              <Search className="w-4 h-4 text-slate-500 absolute left-4 top-3.5" />
+              <input 
+                type="text" 
+                placeholder="Buscar por nombre de radio o género musical..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-[#0c091c] border border-slate-800 rounded-xl py-3 pl-11 pr-4 text-xs text-white focus:outline-none focus:border-purple-500/50"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {estacionesFiltradas.length > 0 ? (
+                estacionesFiltradas.map((est) => (
+                  <div key={est.id} className="bg-slate-900/40 border border-slate-900 p-4 rounded-2xl flex items-center justify-between group hover:border-purple-500/20 transition">
+                    <div className="flex items-center gap-3">
+                      <img src={est.img} alt="" className="w-11 h-11 rounded-xl object-cover" />
+                      <div>
+                        <h4 className="font-bold text-xs text-white truncate max-w-[120px]">{est.title}</h4>
+                        <p className="text-[10px] text-slate-400 truncate">{est.genre}</p>
                       </div>
-                    ))}
+                    </div>
+                    <button onClick={() => cambiarEstacionGlobal(est)} className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-200 group-hover:bg-white group-hover:text-slate-950 transition">
+                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                    </button>
                   </div>
-                </div>
+                ))
+              ) : (
+                <p className="text-xs text-slate-500 col-span-4">No se encontraron resultados.</p>
               )}
-
-              {/* SUB-TAB: BIBLIOTECA */}
-              {homeSubTab === 'biblioteca' && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-black text-white">Tu Historial de Escucha</h3>
-                  <p className="text-xs text-slate-400">Aquí se guardarán las estaciones que has sintonizado recientemente en la plataforma.</p>
-                  <div className="bg-slate-900/20 border border-dashed border-slate-800 rounded-xl p-8 text-center text-xs text-slate-500">
-                    Sintoniza emisoras públicas en la pestaña "Descubrir" para crear tu historial.
-                  </div>
-                </div>
-              )}
-
-              {/* SUB-TAB: BUSCAR */}
-              {homeSubTab === 'buscar' && (
-                <div className="space-y-6">
-                  <div className="max-w-md relative">
-                    <Search className="w-4 h-4 text-slate-500 absolute left-4 top-3.5" />
-                    <input 
-                      type="text" 
-                      placeholder="Buscar por nombre de radio o género..." 
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-[#0c091c] border border-slate-800 rounded-xl py-3 pl-11 pr-4 text-xs text-white focus:outline-none focus:border-purple-500/50"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {estacionesFiltradas.length > 0 ? (
-                      estacionesFiltradas.map((est) => (
-                        <div key={est.id} className="bg-slate-900/40 border border-slate-900 p-4 rounded-2xl flex items-center justify-between group hover:border-purple-500/20 transition">
-                          <div className="flex items-center gap-3">
-                            <img src={est.img} alt="" className="w-11 h-11 rounded-xl object-cover" />
-                            <div>
-                              <h4 className="font-bold text-xs text-white truncate max-w-[120px]">{est.title}</h4>
-                              <p className="text-[10px] text-slate-400 truncate">{est.genre}</p>
-                            </div>
-                          </div>
-                          <button onClick={() => cambiarEstacionGlobal(est)} className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-200 group-hover:bg-white group-hover:text-slate-950 transition">
-                            <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-xs text-slate-500 col-span-4">No se encontraron estaciones que coincidan con tu búsqueda.</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
             </div>
-
           </div>
         )}
 
@@ -357,9 +364,6 @@ export default function App() {
                   <button onClick={() => setActiveDashboardSection('analytics')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition ${activeDashboardSection === 'analytics' ? 'bg-purple-950/40 text-cyan-400 border border-cyan-500/20' : 'text-slate-400 hover:bg-slate-900/50 hover:text-white'}`}>
                     <BarChart3 className="w-4 h-4" /> Analíticas e Historial
                   </button>
-                  <button onClick={() => setActiveDashboardSection('monetization')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition ${activeDashboardSection === 'monetization' ? 'bg-purple-950/40 text-emerald-400 border border-emerald-500/20' : 'text-slate-400 hover:bg-slate-900/50 hover:text-white'}`}>
-                    <DollarSign className="w-4 h-4" /> Monetización Audio
-                  </button>
                 </aside>
 
                 {/* CONTENIDO DEL DASHBOARD DE CONTROL */}
@@ -381,44 +385,23 @@ export default function App() {
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <h3 className="text-base font-bold text-white">Playlist del Auto-DJ</h3>
-                        <span className="text-xs text-purple-400 bg-purple-950/30 px-3 py-1.5 rounded-xl border border-purple-500/20 font-medium">Límite del Plan: {autoDJPistas.length} / {selectedPlan?.limitePistas || 100}</span>
+                        <span className="text-xs text-purple-400 bg-purple-950/30 px-3 py-1.5 rounded-xl border border-purple-500/20 font-medium">Límite: {autoDJPistas.length} / {selectedPlan?.limitePistas || 100}</span>
                       </div>
                       <form onSubmit={handleSubirPista} className="flex gap-2 bg-[#0c091c] p-3 rounded-xl border border-slate-900">
                         <input type="text" required placeholder="Nombre de la pista..." value={nuevaPistaNombre} onChange={(e) => setNuevaPistaNombre(e.target.value)} className="bg-[#120f26] border border-slate-800 rounded-lg px-3 py-2 text-xs text-white flex-1 focus:outline-none" />
-                        <button type="submit" className="bg-purple-600 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5"><Upload className="w-3.5 h-3.5" /> Upload</button>
+                        <button type="submit" className="bg-purple-600 text-white text-xs font-bold px-4 py-2 rounded-lg"><Upload className="w-3.5 h-3.5 inline-block" /> Upload</button>
                       </form>
                       <div className="border border-slate-900 rounded-xl overflow-hidden text-xs">
-                        <div className="grid grid-cols-12 bg-[#0c091c] p-3 border-b border-slate-900 text-slate-400 font-bold">
-                          <div className="col-span-6">Título</div>
-                          <div className="col-span-4">Duración</div>
-                          <div className="col-span-2 text-right">Acciones</div>
-                        </div>
                         {autoDJPistas.map((pista) => (
                           <div key={pista.id} className="grid grid-cols-12 p-3 items-center hover:bg-slate-900/30 transition">
                             <div className="col-span-6 flex items-center gap-2 font-medium text-slate-200"><Play className="w-3 h-3 text-slate-500" /> {pista.title}</div>
                             <div className="col-span-4 text-slate-400 font-mono">{pista.duration}</div>
                             <div className="col-span-2 text-right">
-                              <button onClick={() => eliminarPista(pista.id)} className="p-1.5 rounded bg-red-500/10 text-red-400 border border-red-500/10 hover:bg-red-500/20"><Trash2 className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => eliminarPista(pista.id)} className="p-1.5 rounded bg-red-500/10 text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
                             </div>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
-
-                  {activeDashboardSection === 'analytics' && (
-                    <div className="space-y-4">
-                      <h3 className="text-base font-bold text-white">Analíticas Geográficas</h3>
-                      <div className="bg-[#0c091c]/50 p-4 rounded-lg border border-slate-900 flex justify-between text-xs">
-                        <span>🇲🇽 México</span><span className="font-mono text-cyan-400 font-bold">1,909 Oyentes</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeDashboardSection === 'monetization' && (
-                    <div className="space-y-4">
-                      <h3 className="text-base font-bold text-white">Monetización</h3>
-                      <p className="text-xs text-slate-400">Anuncios de audio activos e integrados en tu señal.</p>
                     </div>
                   )}
                 </div>
@@ -450,7 +433,6 @@ export default function App() {
           <div className="w-full max-w-md bg-[#090714] border border-purple-950/40 rounded-2xl p-6 relative space-y-6">
             <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white">✕</button>
             <div className="text-center space-y-1">
-              <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-0.5 rounded-full font-bold uppercase">{isRegistering ? 'Configurar cuenta' : 'Acceso'}</span>
               <h3 className="text-xl font-bold text-white">{isRegistering ? 'Crea tu cuenta de Emisor' : 'Ingresa a tu Consola'}</h3>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); setUser({ email: authEmail }); setHasPaymentMethod(true); setShowAuthModal(false); setCurrentTab('dashboard'); }} className="space-y-4">
@@ -459,10 +441,6 @@ export default function App() {
                 <div className="bg-[#0e0b20] border border-purple-900/20 p-4 rounded-xl space-y-3">
                   <span className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-pink-500" /> Tarjeta de Validación</span>
                   <input type="text" required placeholder="0000 0000 0000 0000" maxLength="16" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} className="w-full bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white focus:outline-none font-mono" />
-                  <div className="grid grid-cols-2 gap-3">
-                    <input type="text" required placeholder="MM/AA" maxLength="5" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} className="bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white text-center font-mono" />
-                    <input type="password" required placeholder="CVC" maxLength="3" value={cardCvc} onChange={(e) => setCardCvc(e.target.value)} className="bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white text-center font-mono" />
-                  </div>
                 </div>
               )}
               <button type="submit" className="w-full bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black py-3 rounded-xl text-xs uppercase flex items-center justify-center gap-1.5">
