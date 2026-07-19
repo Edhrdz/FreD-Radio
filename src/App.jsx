@@ -12,12 +12,13 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState('home'); 
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Sub-pestaña activa dentro del Panel del Locutor (Zeno Tools Style)
+  // Sub-pestaña activa dentro del Panel del Locutor
   const [activeDashboardSection, setActiveDashboardSection] = useState('live');
 
   // Estados de Autenticación y Planes
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [requiresCard, setRequiresCard] = useState(false); // Controla si se pide tarjeta
   const [authEmail, setAuthEmail] = useState(''); 
   const [user, setUser] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -44,7 +45,7 @@ export default function App() {
   const [formLogo, setFormLogo] = useState('');
   const [miEstacionPropia, setMiEstacionPropia] = useState(null);
 
-  // Estado del AutoDJ (Lista de reproducción idéntica a la captura de Zeno)
+  // Estado del AutoDJ
   const [autoDJPistas, setAutoDJPistas] = useState([
     { id: 1, title: 'Track 001', artist: 'Artist 01', album: 'Album Alpha', duration: '03:18', size: '4.2 MB' },
     { id: 2, title: 'Track 002', artist: 'Artist 02', album: 'Album Beta', duration: '04:35', size: '5.8 MB' },
@@ -108,6 +109,13 @@ export default function App() {
     setAutoDJPistas(autoDJPistas.filter(p => p.id !== id));
   };
 
+  const handleGoogleLogin = () => {
+    setUser({ email: 'usuario.google@gmail.com' });
+    setHasPaymentMethod(true); 
+    setShowAuthModal(false);
+    setCurrentTab('dashboard');
+  };
+
   const estacionesFiltradas = estacionesFijas.filter(est => 
     est.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     est.genre.toLowerCase().includes(searchQuery.toLowerCase())
@@ -117,7 +125,7 @@ export default function App() {
     <div className="min-h-screen bg-[#05030a] text-slate-100 font-sans antialiased pb-32">
       <audio ref={audioRef} src={currentStation.streamUrl} />
 
-      {/* HEADER GLOBAL CON BOTONES INTEGRADOS ADELANTE */}
+      {/* HEADER GLOBAL */}
       <header className="sticky top-0 z-40 bg-[#05030a]/90 backdrop-blur-md border-b border-purple-950/20 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <div onClick={() => setCurrentTab('home')} className="flex items-center gap-3 cursor-pointer shrink-0">
@@ -127,7 +135,7 @@ export default function App() {
             <span className="text-xl font-black tracking-tight text-white">FreD</span>
           </div>
 
-          {/* NAVBAR CENTRAL: TODOS LOS BOTONES EN FILA INCLUYENDO DESCUBRIR, BIBLIOTECA Y BUSCAR */}
+          {/* NAVBAR CENTRAL BLOCKED */}
           <nav className="hidden lg:flex items-center gap-1.5 text-xs font-bold text-slate-400">
             <button onClick={() => setCurrentTab('home')} className={`px-3.5 py-2 rounded-xl transition ${currentTab === 'home' ? 'text-white bg-slate-900/60' : 'hover:text-white'}`}>Home</button>
             <button onClick={() => setCurrentTab('pricing')} className={`px-3.5 py-2 rounded-xl transition ${currentTab === 'pricing' ? 'text-white bg-slate-900/60' : 'hover:text-white'}`}>Planes y Precios</button>
@@ -153,7 +161,7 @@ export default function App() {
           </nav>
         </div>
 
-        {/* ACCIONES DERECHAS DEL HEADER */}
+        {/* ACCIONES DERECHAS */}
         <div className="flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-3">
@@ -162,13 +170,13 @@ export default function App() {
             </div>
           ) : (
             <>
-              <button onClick={() => { setIsRegistering(false); setShowAuthModal(true); }} className="text-xs font-bold text-slate-300 hover:text-white transition px-3 py-2 flex items-center gap-1.5">
+              <button onClick={() => { setIsRegistering(false); setRequiresCard(false); setShowAuthModal(true); }} className="text-xs font-bold text-slate-300 hover:text-white transition px-3 py-2 flex items-center gap-1.5">
                 <LogIn className="w-3.5 h-3.5 text-purple-400" /> Iniciar Sesión
               </button>
-              <button onClick={() => { setIsRegistering(true); setSelectedPlan(tablaPlanes[1]); setShowAuthModal(true); }} className="text-xs font-bold bg-slate-900 border border-slate-800 text-slate-200 px-4 py-2 rounded-xl hover:border-purple-500/40 transition flex items-center gap-1.5">
+              <button onClick={() => { setIsRegistering(true); setRequiresCard(false); setSelectedPlan(null); setShowAuthModal(true); }} className="text-xs font-bold bg-slate-900 border border-slate-800 text-slate-200 px-4 py-2 rounded-xl hover:border-purple-500/40 transition flex items-center gap-1.5">
                 <UserPlus className="w-3.5 h-3.5 text-pink-400" /> Registrarse
               </button>
-              <button onClick={() => { setIsRegistering(true); setSelectedPlan(tablaPlanes[0]); setShowAuthModal(true); }} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black px-5 py-2.5 rounded-full text-xs tracking-wide shadow-md hover:opacity-90 transition">
+              <button onClick={() => { setIsRegistering(true); setRequiresCard(true); setSelectedPlan(tablaPlanes[0]); setShowAuthModal(true); }} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black px-5 py-2.5 rounded-full text-xs tracking-wide shadow-md hover:opacity-90 transition">
                 Empezar Prueba Gratis
               </button>
             </>
@@ -179,7 +187,7 @@ export default function App() {
       {/* CUERPO PRINCIPAL */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         
-        {/* VISTA: HOME ORIGINAL LIMPIO */}
+        {/* VISTA: HOME */}
         {currentTab === 'home' && (
           <div className="space-y-16">
             <section className="bg-gradient-to-br from-purple-950/30 via-slate-950 to-slate-950 rounded-3xl border border-purple-500/10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
@@ -199,7 +207,6 @@ export default function App() {
               </div>
             </section>
 
-            {/* SECCIÓN DE CARACTERÍSTICAS TÉCNICAS */}
             <section className="space-y-6">
               <h3 className="text-xl font-black text-white text-center">Infraestructura Diseñada para Emisores</h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -228,7 +235,7 @@ export default function App() {
           </div>
         )}
 
-        {/* VISTA: PESTAÑA INTEGRADA - DESCUBRIR */}
+        {/* VISTA: DESCUBRIR */}
         {currentTab === 'discover' && (
           <div className="space-y-6">
             <div>
@@ -255,18 +262,18 @@ export default function App() {
           </div>
         )}
 
-        {/* VISTA: PESTAÑA INTEGRADA - BIBLIOTECA */}
+        {/* VISTA: BIBLIOTECA */}
         {currentTab === 'library' && (
           <div className="space-y-4">
             <h3 className="text-xl font-black text-white flex items-center gap-2"><Library className="w-5 h-5 text-pink-400" /> Tu Biblioteca</h3>
             <p className="text-xs text-slate-400">Tus estaciones guardadas y favoritas aparecerán en este bloque.</p>
             <div className="bg-slate-900/20 border border-dashed border-slate-800 rounded-xl p-12 text-center text-xs text-slate-500">
-              Sintoniza emisoras en la pestaña superior "Descubrir" para guardar elementos aquí.
+              Sintoniza cyber-emisoras en la pestaña superior "Descubrir" para guardar elementos aquí.
             </div>
           </div>
         )}
 
-        {/* VISTA: PESTAÑA INTEGRADA - BUSCAR */}
+        {/* VISTA: BUSCAR */}
         {currentTab === 'search_tab' && (
           <div className="space-y-6">
             <div className="max-w-md relative">
@@ -302,7 +309,7 @@ export default function App() {
           </div>
         )}
 
-        {/* VISTA: PLANES DE PRECIOS */}
+        {/* VISTA: PLANES */}
         {currentTab === 'pricing' && (
           <div className="space-y-8">
             <div className="text-center space-y-2">
@@ -324,7 +331,7 @@ export default function App() {
                       <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-purple-400" /> <strong>{plan.limitePistas} pistas</strong> AutoDJ</li>
                     </ul>
                   </div>
-                  <button onClick={() => { setSelectedPlan(plan); setIsRegistering(true); setShowAuthModal(true); }} className={`w-full font-black py-3 rounded-xl text-xs uppercase tracking-wider transition ${plan.soloPrueba ? 'bg-white text-slate-950 hover:bg-slate-200' : 'bg-slate-900 text-white border border-slate-800 hover:border-purple-500/40'}`}>
+                  <button onClick={() => { setSelectedPlan(plan); setIsRegistering(true); setRequiresCard(plan.soloPrueba); setShowAuthModal(true); }} className={`w-full font-black py-3 rounded-xl text-xs uppercase tracking-wider transition ${plan.soloPrueba ? 'bg-white text-slate-950 hover:bg-slate-200' : 'bg-slate-900 text-white border border-slate-800 hover:border-purple-500/40'}`}>
                     {plan.soloPrueba ? 'Prueba Gratis 15 días' : `Adquirir ${plan.nombre}`}
                   </button>
                 </div>
@@ -333,11 +340,12 @@ export default function App() {
           </div>
         )}
 
-        {/* VISTA: PANEL DE LOCUTOR COMPLETO CON MENÚ LATERAL IZQUIERDO */}
+        {/* VISTA: PANEL DE LOCUTOR */}
         {currentTab === 'dashboard' && user && hasPaymentMethod && (
           <div className="space-y-6">
             <div className="border-b border-slate-900 pb-4">
-              <h2 className="text-xl font-black text-white flex items-center gap-2"><LayoutDashboard className="w-5 h-5 text-purple-400" /> Consola de Control Zeno Tools</h2>
+              {/* REMOVIDO "ZENO TOOLS" AQUÍ ABAJO */}
+              <h2 className="text-xl font-black text-white flex items-center gap-2"><LayoutDashboard className="w-5 h-5 text-purple-400" /> Consola de Control</h2>
               <p className="text-xs text-slate-400">Gestiona tu estación, automatizaciones de AutoDJ y analíticas geográficas.</p>
             </div>
 
@@ -352,7 +360,7 @@ export default function App() {
               </div>
             ) : (
               <div className="flex flex-col md:flex-row gap-6 items-start">
-                {/* MENÚ LATERAL IZQUIERDO */}
+                {/* MENÚ LATERAL BLOQUEADO */}
                 <aside className="w-full md:w-64 bg-[#0a0716] border border-slate-900 rounded-2xl p-3 flex flex-col gap-1 shrink-0">
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 py-2">Módulos de Radio</span>
                   <button onClick={() => setActiveDashboardSection('live')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition ${activeDashboardSection === 'live' ? 'bg-purple-950/40 text-purple-400 border border-purple-500/20' : 'text-slate-400 hover:bg-slate-900/50 hover:text-white'}`}>
@@ -366,7 +374,6 @@ export default function App() {
                   </button>
                 </aside>
 
-                {/* CONTENIDO DEL DASHBOARD DE CONTROL */}
                 <div className="flex-1 w-full bg-[#070512] border border-slate-900 rounded-2xl p-6 min-h-[460px]">
                   {activeDashboardSection === 'live' && (
                     <div className="space-y-6">
@@ -412,7 +419,7 @@ export default function App() {
 
       </main>
 
-      {/* REPRODUCTOR INFERIOR GLOBAL */}
+      {/* REPRODUCTOR INFERIOR */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0a0814]/95 border-t border-purple-500/10 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4 w-1/3">
           <img src={currentStation.img} alt="" className="w-10 h-10 rounded-lg object-cover shadow" />
@@ -427,26 +434,49 @@ export default function App() {
         </div>
       </div>
 
-      {/* MODAL DE AUTENTICACIÓN */}
+      {/* MODAL DE AUTENTICACIÓN CON AJUSTES DE REGISTRO CONDICIONAL Y GOOGLE */}
       {showAuthModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#090714] border border-purple-950/40 rounded-2xl p-6 relative space-y-6">
+          <div className="w-full max-w-md bg-[#090714] border border-purple-950/40 rounded-2xl p-6 relative space-y-5">
             <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white">✕</button>
             <div className="text-center space-y-1">
-              <h3 className="text-xl font-bold text-white">{isRegistering ? 'Crea tu cuenta de Emisor' : 'Ingresa a tu Consola'}</h3>
+              <h3 className="text-lg font-bold text-white">
+                {isRegistering ? (requiresCard ? 'Comenzar Prueba Gratis' : 'Crea tu cuenta de Emisor') : 'Ingresa a tu Consola'}
+              </h3>
             </div>
+            
             <form onSubmit={(e) => { e.preventDefault(); setUser({ email: authEmail }); setHasPaymentMethod(true); setShowAuthModal(false); setCurrentTab('dashboard'); }} className="space-y-4">
               <input type="email" required placeholder="Tu correo electrónico" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-[#0d0a1c] border border-slate-900 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none" />
-              {isRegistering && (
+              
+              {/* LA TARJETA SOLO SE MUESTRA SI REQUIRES_CARD ES TRUE (PRUEBA GRATIS DESDE EL BOTÓN) */}
+              {isRegistering && requiresCard && (
                 <div className="bg-[#0e0b20] border border-purple-900/20 p-4 rounded-xl space-y-3">
                   <span className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-pink-500" /> Tarjeta de Validación</span>
                   <input type="text" required placeholder="0000 0000 0000 0000" maxLength="16" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} className="w-full bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white focus:outline-none font-mono" />
                 </div>
               )}
+
               <button type="submit" className="w-full bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black py-3 rounded-xl text-xs uppercase flex items-center justify-center gap-1.5">
-                <ShieldCheck className="w-4 h-4" /> {isRegistering ? 'Comenzar Suscripción' : 'Entrar al Panel'}
+                <ShieldCheck className="w-4 h-4" /> {isRegistering ? (requiresCard ? 'Comenzar Suscripción' : 'Registrarse Now') : 'Entrar al Panel'}
               </button>
             </form>
+
+            {/* BOTÓN OAUTH GOOGLE INTEGRADO */}
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-slate-900"></div>
+              <span className="flex-shrink mx-4 text-[10px] text-slate-500 font-bold uppercase">O continuar con</span>
+              <div className="flex-grow border-t border-slate-900"></div>
+            </div>
+
+            <button 
+              onClick={handleGoogleLogin}
+              className="w-full bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-200 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l3.227-3.102C18.445 2.108 15.595 1 12.24 1c-6.075 0-11 4.925-11 11s4.925 11 11 11c6.34 0 10.56-4.455 10.56-10.75 0-.725-.075-1.275-.165-1.665h-10.4z"/>
+              </svg>
+              Google Account
+            </button>
           </div>
         </div>
       )}
