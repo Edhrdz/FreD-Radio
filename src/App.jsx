@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { Radio, Compass, Library, Search, LogIn, CheckCircle, Play, Pause, ArrowRight, Volume2, VolumeX, Music, Heart, Sparkles } from 'lucide-react';
+import { Radio, Compass, Library, Search, LogIn, CheckCircle, Play, Pause, ArrowRight, Volume2, VolumeX, Music, Heart, Sparkles, Sliders, PlusCircle, RadioTower, Key, Disc } from 'lucide-react';
 
 export default function App() {
   // Estados de Navegación por Pestañas
@@ -13,12 +13,11 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [message, setMessage] = useState({ type: '', text: '' });
   const [user, setUser] = useState(null);
 
   // Estados del Reproductor de Radio
   const [currentStation, setCurrentStation] = useState({
-    id: 1,
+    id: 101,
     title: 'Groove Salad',
     genre: 'Ambient / Lounge',
     streamUrl: 'https://ice1.somafm.com/groovesalad-128-mp3',
@@ -29,6 +28,13 @@ export default function App() {
   const [isMuted, setIsMuted] = useState(false);
 
   const audioRef = useRef(null);
+
+  // Estados del Formulario de Registro de Estación Nueva
+  const [formTitle, setFormTitle] = useState('');
+  const [formGenre, setFormGenre] = useState('');
+  const [formLogo, setFormLogo] = useState('');
+  const [formStream, setFormStream] = useState('');
+  const [formTags, setFormTags] = useState('');
 
   // BASE DE DATOS DE ESTACIONES REALS CON SUS LOGOS OFICIALES
   const estacionesSugeridas = [
@@ -42,11 +48,14 @@ export default function App() {
     { id: 108, title: 'Secret Agent', genre: 'Lounge / Spy', streamUrl: 'https://ice1.somafm.com/secretagent-128-mp3', img: 'https://somafm.com/logos/256/secretagent256.png', tags: 'Cinematic, 60s', isCustom: false },
   ];
 
-  // RADIOS CREADAS POR LOS USUARIOS DE LA COMUNIDAD DE FRED (Aparecen Primero)
+  // RADIOS CREADAS POR LOS USUARIOS DE LA COMUNIDAD (Empieza con un par de muestra)
   const [estacionesComunidad, setEstacionesComunidad] = useState([
     { id: 1, title: 'Mi Radio Urbana', genre: 'Reggaeton / Trap', streamUrl: 'https://ice1.somafm.com/fluid-128-mp3', img: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&q=80', tags: 'Comunidad, Urban', userCreator: 'Carlos_DJ', isCustom: true },
     { id: 2, title: 'Rock Local FreD', genre: 'Rock en Español', streamUrl: 'https://ice1.somafm.com/indiepop-128-mp3', img: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=400&q=80', tags: 'Comunidad, Rock', userCreator: 'FreD_Master', isCustom: true },
   ]);
+
+  // Objeto que almacena la estación que el usuario logueado ha creado (null si no tiene una)
+  const [miEstacionPropia, setMiEstacionPropia] = useState(null);
 
   // UNIÓN DE AMBAS: Las de la comunidad van primero en la fila siempre
   const todasLasEstaciones = [...estacionesComunidad, ...estacionesSugeridas];
@@ -65,6 +74,27 @@ export default function App() {
     }
   }, [isPlaying, currentStation, volume, isMuted]);
 
+  // Manejar creación de la estación desde el formulario
+  const handleCrearEstacion = (e) => {
+    e.preventDefault();
+    
+    const nuevaRadio = {
+      id: Date.now(), // ID temporal único
+      title: formTitle || 'Mi Estación de Radio',
+      genre: formGenre || 'Varios / Música',
+      streamUrl: formStream || 'https://ice1.somafm.com/groovesalad-128-mp3', // default si está vacío
+      img: formLogo || 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=400&q=80',
+      tags: formTags || 'En Vivo, Web',
+      userCreator: user ? user.email.split('@')[0] : 'Locutor Anonimo',
+      isCustom: true
+    };
+
+    // Añadir a la lista comunitaria global (Prioridad Máxima)
+    setEstacionesComunidad([nuevaRadio, ...estacionesComunidad]);
+    // Asignar como la estación propia del locutor actual
+    setMiEstacionPropia(nuevaRadio);
+  };
+
   const seleccionarEstacion = (est) => {
     setCurrentStation({
       id: est.id,
@@ -79,23 +109,28 @@ export default function App() {
   const handleAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage({ type: '', text: '' });
 
     if (isRegistering) {
       const { data, error } = await supabase.auth.signUp({ email, password });
-      if (error) setMessage({ type: 'error', text: error.message });
-      else setMessage({ type: 'success', text: '¡Registro exitoso! Revisa tu correo.' });
+      if (error) alert(error.message);
+      else alert('¡Registro simulado / exitoso!');
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        setMessage({ type: 'error', text: error.message });
+        alert(error.message);
       } else {
         setUser(data.user);
-        setMessage({ type: 'success', text: '¡Sesión iniciada!' });
-        setTimeout(() => setShowAuthModal(false), 1500);
+        setShowAuthModal(false);
       }
     }
     setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setMiEstacionPropia(null);
+    setCurrentTab('home');
   };
 
   const filteredStations = todasLasEstaciones.filter(est => 
@@ -123,14 +158,21 @@ export default function App() {
           <nav className="hidden md:flex items-center gap-4 text-sm font-medium text-slate-400">
             <button onClick={() => setCurrentTab('home')} className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition ${currentTab === 'home' ? 'text-white bg-slate-900/40 border-slate-800/40' : 'border-transparent hover:text-white'}`}><Radio className="w-4 h-4 text-pink-500" /> Home</button>
             <button onClick={() => setCurrentTab('discover')} className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition ${currentTab === 'discover' ? 'text-white bg-slate-900/40 border-slate-800/40' : 'border-transparent hover:text-white'}`}><Compass className="w-4 h-4 text-purple-400" /> Descubrir</button>
-            <button onClick={() => setCurrentTab('library')} className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition ${currentTab === 'library' ? 'text-white bg-slate-900/40 border-slate-800/40' : 'border-transparent hover:text-white'}`}><Library className="w-4 h-4 text-fuchsia-400" /> Biblioteca</button>
             <button onClick={() => setCurrentTab('search')} className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition ${currentTab === 'search' ? 'text-white bg-slate-900/40 border-slate-800/40' : 'border-transparent hover:text-white'}`}><Search className="w-4 h-4 text-cyan-400" /> Buscar</button>
+            
+            {/* PESTAÑA EXCLUSIVA SI EL USUARIO INICIÓ SESIÓN */}
+            {user && (
+              <button onClick={() => setCurrentTab('dashboard')} className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition ${currentTab === 'dashboard' ? 'text-white bg-purple-500/20 border-purple-500/40' : 'border-purple-950/40 hover:text-purple-300 text-purple-400 font-semibold'}`}><Sliders className="w-4 h-4 text-fuchsia-500 animate-pulse" /> Panel Locutor</button>
+            )}
           </nav>
         </div>
 
-        <div>
+        <div className="flex items-center gap-4">
           {user ? (
-            <span className="text-xs bg-purple-950/40 border border-purple-500/30 px-4 py-2 rounded-full text-purple-300 font-medium">{user.email}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs bg-purple-950/40 border border-purple-500/30 px-4 py-2 rounded-full text-purple-300 font-medium">{user.email}</span>
+              <button onClick={handleLogout} className="text-xs text-slate-400 hover:text-red-400 font-medium transition">Salir</button>
+            </div>
           ) : (
             <button onClick={() => { setIsRegistering(false); setShowAuthModal(true); }} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-bold px-6 py-2 rounded-full shadow-lg text-sm">Iniciar sesión</button>
           )}
@@ -143,24 +185,31 @@ export default function App() {
         {/* VISTA: HOME */}
         {currentTab === 'home' && (
           <div className="space-y-12">
-            {/* Banner Estatuto */}
+            {/* Banner Informativo */}
             <section className="relative overflow-hidden bg-gradient-to-br from-purple-900/20 via-fuchsia-950/10 to-slate-950 rounded-3xl border border-purple-500/5 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl">
               <div className="max-w-xl space-y-6 z-10">
                 <span className="inline-flex items-center gap-1.5 bg-pink-500/10 text-pink-400 text-xs font-bold px-3 py-1 rounded-full border border-pink-500/20 uppercase tracking-widest animate-pulse">
-                  ● EN VIVO AHORA
+                  ● PLATAFORMA ABIERTA
                 </span>
                 <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-none text-white">
                   La radio del mundo, <br /><span className="bg-gradient-to-r from-purple-400 via-pink-400 to-fuchsia-400 bg-clip-text text-transparent">en tus manos</span>
                 </h2>
                 <p className="text-slate-400 text-base leading-relaxed">
-                  Escucha las estaciones oficiales o sintoniza los canales independientes creados directamente por nuestra comunidad registrada.
+                  Escucha las estaciones oficiales o sintoniza los canales independientes creados directamente por nuestra comunidad registrada. ¡Inicia sesión para registrar tu propia estación!
                 </p>
-                <button onClick={() => setCurrentTab('discover')} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-bold px-6 py-3 rounded-full flex items-center gap-2 shadow-lg transition">
-                  Explorar estaciones <ArrowRight className="w-4 h-4" />
-                </button>
+                <div className="flex gap-4">
+                  <button onClick={() => setCurrentTab('discover')} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-bold px-6 py-3 rounded-full flex items-center gap-2 shadow-lg transition">
+                    Explorar estaciones <ArrowRight className="w-4 h-4" />
+                  </button>
+                  {user && !miEstacionPropia && (
+                    <button onClick={() => setCurrentTab('dashboard')} className="bg-slate-900 border border-slate-800 text-purple-400 font-bold px-6 py-3 rounded-full flex items-center gap-2 transition hover:bg-slate-800">
+                      Emitir En Vivo <RadioTower className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Tarjeta Destacada con Imagen Real */}
+              {/* Tarjeta Destacada */}
               <div onClick={() => seleccionarEstacion(estacionesSugeridas[0])} className="relative w-full max-w-[340px] aspect-square rounded-2xl overflow-hidden shadow-2xl group cursor-pointer border border-white/5">
                 <img src={estacionesSugeridas[0].img} alt="Cover" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent flex flex-col justify-end p-6">
@@ -176,7 +225,7 @@ export default function App() {
             {/* SECCIÓN PRIORITARIA: EMISORAS DE NUESTRA COMUNIDAD */}
             <section className="space-y-6">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-amber-400 animate-spin" style={{ animationDuration: '4s' }} />
+                <Sparkles className="w-5 h-5 text-amber-400" />
                 <h3 className="text-2xl font-bold tracking-tight text-white">Estaciones de la Comunidad FreD</h3>
                 <span className="text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-md font-semibold">Prioridad Alta</span>
               </div>
@@ -228,15 +277,122 @@ export default function App() {
           </div>
         )}
 
-        {/* REUTILIZAMOS LAS VISTAS DE BUSCAR Y BIBLIOTECA DEL PASO ANTERIOR */}
-        {currentTab === 'library' && (
-          <div className="space-y-6 text-center py-16 bg-slate-900/10 border border-slate-900 rounded-3xl p-8 max-w-2xl mx-auto">
-            <div className="w-16 h-16 bg-fuchsia-500/10 rounded-full flex items-center justify-center mx-auto text-fuchsia-400"><Heart className="w-8 h-8 fill-current" /></div>
-            <h2 className="text-2xl font-bold text-white">Tu Biblioteca Personal</h2>
-            <p className="text-slate-400 text-sm max-w-sm mx-auto">{user ? 'Aún no has guardado ninguna estación favorita.' : 'Inicia sesión para guardar tus estaciones favoritas y sincronizarlas.'}</p>
+        {/* VISTA NUEVA: DASHBOARD DEL LOCUTOR */}
+        {currentTab === 'dashboard' && user && (
+          <div className="space-y-8 max-w-4xl mx-auto">
+            <div>
+              <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                <RadioTower className="w-8 h-8 text-purple-400" /> Panel de Control de Emisión
+              </h2>
+              <p className="text-slate-400 text-sm mt-1">Configura tu estación de radio y obtén tus credenciales para transmitir en vivo.</p>
+            </div>
+
+            {/* CASO A: EL USUARIO NO TIENE UNA RADIO REGISTRADA TODAVÍA -> MUESTRA EL FORMULARIO */}
+            {!miEstacionPropia ? (
+              <div className="bg-[#0b0818] border border-purple-950/50 rounded-3xl p-8 shadow-xl space-y-6">
+                <div className="flex items-center gap-3 border-b border-slate-900 pb-4">
+                  <PlusCircle className="w-6 h-6 text-pink-500" />
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Registrar Mi Nueva Estación</h3>
+                    <p className="text-xs text-slate-400">Rellena los detalles para dar de alta tu señal en el directorio principal.</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleCrearEstacion} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Nombre de la Radio *</label>
+                    <input type="text" required placeholder="Ej: Mi Radio Online" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} className="w-full bg-[#110e24] border border-slate-800 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-pink-500" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Género Musical / Categoría *</label>
+                    <input type="text" required placeholder="Ej: Tech House / Techno o Variada" value={formGenre} onChange={(e) => setFormGenre(e.target.value)} className="w-full bg-[#110e24] border border-slate-800 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-pink-500" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400">URL del Logo / Arte (Imagen Web)</label>
+                    <input type="url" placeholder="Ej: https://images.unsplash.com/..." value={formLogo} onChange={(e) => setFormLogo(e.target.value)} className="w-full bg-[#110e24] border border-slate-800 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-pink-500" />
+                    <p className="text-[11px] text-slate-500">Puedes dejarlo en blanco para usar una imagen por defecto de FreD.</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Etiquetas (Separadas por coma)</label>
+                    <input type="text" placeholder="Ej: En vivo, Electro, Non-stop" value={formTags} onChange={(e) => setFormTags(e.target.value)} className="w-full bg-[#110e24] border border-slate-800 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-pink-500" />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400">URL de Transmisión de Audio (Direct Stream Link)</label>
+                    <input type="url" placeholder="Ej: https://tu-servidor-icecast.com/live" value={formStream} onChange={(e) => setFormStream(e.target.value)} className="w-full bg-[#110e24] border border-slate-800 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-pink-500" />
+                    <p className="text-[11px] text-purple-400/80">Si aún no tienes servidor, déjalo vacío y el sistema te asignará una señal demo para que pruebes el reproductor de inmediato.</p>
+                  </div>
+
+                  <div className="md:col-span-2 pt-4">
+                    <button type="submit" className="w-full bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black py-4 rounded-xl shadow-xl hover:opacity-90 transition uppercase tracking-wider text-sm">
+                      Activar y Registrar Mi Estación
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              /* CASO B: EL LOCUTOR YA REGISTRÓ SU RADIO -> MUESTRA LAS CREDENCIALES Y DATOS DE EMISIÓN */
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {/* Bloque Izquierdo: Estado de la señal en tiempo real */}
+                <div className="bg-[#0b0818] border border-purple-950/50 rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-4">
+                  <div className="relative w-28 h-28 rounded-xl overflow-hidden shadow-md">
+                    <img src={miEstacionPropia.img} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <Disc className="w-8 h-8 text-white animate-spin" style={{ animationDuration: '3s' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-3 py-1 rounded-full border border-emerald-500/20 uppercase tracking-widest mb-1">
+                      ● EMISIÓN ACTIVA
+                    </span>
+                    <h3 className="text-xl font-bold text-white truncate max-w-[200px]">{miEstacionPropia.title}</h3>
+                    <p className="text-xs text-purple-400">{miEstacionPropia.genre}</p>
+                  </div>
+                  <button onClick={() => seleccionarEstacion(miEstacionPropia)} className="bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold py-2 px-4 rounded-xl text-xs w-full transition flex items-center justify-center gap-2">
+                    <Play className="w-3 h-3 fill-current" /> Probar Oír en Mi Web
+                  </button>
+                </div>
+
+                {/* Bloque Derecho: Servidores y Token para pegar en OBS / BUTT */}
+                <div className="md:col-span-2 bg-[#0b0818] border border-purple-950/50 rounded-2xl p-6 space-y-6">
+                  <div>
+                    <h4 className="font-bold text-white text-lg">Parámetros de Conexión de Audio</h4>
+                    <p className="text-xs text-slate-400">Introduce estos datos en tu codificador de streaming favorito (OBS Studio, BUTT, Mixxx) para mandar tu audio directo a la plataforma.</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="bg-[#120f26] border border-slate-900 rounded-xl p-4 space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><RadioTower className="w-3 h-3 text-cyan-400" /> Servidor de Audio (Icecast URL)</span>
+                        <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/5 px-2 py-0.5 rounded">Recomendado</span>
+                      </div>
+                      <p className="text-sm font-mono text-slate-200 select-all break-all">icecast.fredradio.com:8000/live</p>
+                    </div>
+
+                    <div className="bg-[#120f26] border border-slate-900 rounded-xl p-4 space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><Key className="w-3 h-3 text-pink-400" /> Clave de Transmisión / Mountpoint Password</span>
+                        <span className="text-[10px] text-purple-400 font-semibold">Privado</span>
+                      </div>
+                      <p className="text-sm font-mono text-pink-400 select-all">fred_stream_pass_{miEstacionPropia.id}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-purple-950/20 border border-purple-500/10 rounded-xl p-4 text-xs text-slate-400 leading-relaxed">
+                    <strong>¡Tu radio ya está en el aire de FreD-Radio!</strong> Cualquier visitante que entre a la pestaña <em>Home</em> o <em>Descubrir</em> verá tu radio en la sección prioritaria de la comunidad de manera instantánea.
+                  </div>
+                </div>
+
+              </div>
+            )}
           </div>
         )}
 
+        {/* VISTA: SEARCH */}
         {currentTab === 'search' && (
           <div className="space-y-8">
             <input type="text" placeholder="Busca por nombre de estación o género..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full max-w-2xl mx-auto block bg-slate-900 border border-slate-800 rounded-2xl py-4 px-6 text-base focus:outline-none focus:border-cyan-500 transition" />
