@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { Radio, Compass, Search, Sliders, PlusCircle, RadioTower, Key, Disc, Users, Globe, Music2, FolderPlus, CreditCard, ShieldCheck, Check, Sparkles, LogIn } from 'lucide-react';
+import { Radio, Compass, Search, Sliders, PlusCircle, RadioTower, Key, Disc, Users, Globe, Music2, FolderPlus, CreditCard, ShieldCheck, Check, Sparkles, LogIn, DollarSign, BarChart3, Mic } from 'lucide-react';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('home'); 
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Estados de Autenticación y Planes (Corregidos)
+  // Estados de Autenticación y Planes
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
-  const [authEmail, setAuthEmail] = useState(''); // Variable corregida para evitar la pantalla negra
+  const [authEmail, setAuthEmail] = useState(''); 
   const [user, setUser] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [hasPaymentMethod, setHasPaymentMethod] = useState(false);
@@ -56,12 +56,12 @@ export default function App() {
   const [miEstacionPropia, setMiEstacionPropia] = useState(null);
   const todasLasEstaciones = [...estacionesComunidad, ...estacionesSugeridas];
 
-  // Estructura de Planes de Precios configurada según tus instrucciones
+  // Estructura de Planes de Precios Corregida (Módulos de Zeno Tools añadidos)
   const tablaPlanes = [
-    { nombre: 'Básico', precio: '6.50', original: '12.00', estaciones: '1 estación', oyentes: 'Hasta 1,000', limitePistas: 100, color: 'border-slate-800 bg-slate-900/30' },
-    { nombre: 'Estándar', precio: '14.00', original: '28.00', estaciones: '1 estación', oyentes: 'Hasta 5,000', limitePistas: 500, color: 'border-purple-950/40 bg-purple-950/5' },
-    { nombre: 'Pro', precio: '25.00', original: '50.00', estaciones: '3 estaciones', oyentes: 'Hasta 25,000', limitePistas: 1000, color: 'border-pink-500/30 bg-pink-950/5 text-pink-100' },
-    { nombre: 'Premium', precio: '100.00', original: '200.00', estaciones: '5 estaciones', oyentes: 'Ilimitados', limitePistas: 1500, color: 'border-amber-500/40 bg-amber-500/5' }
+    { nombre: 'Básico', precio: '6.50', original: '12.00', estaciones: '1 estación', oyentes: 'Hasta 1,000', limitePistas: 100, color: 'border-slate-800 bg-slate-900/40 hover:border-purple-500/30', soloPrueba: true },
+    { nombre: 'Estándar', precio: '14.00', original: '28.00', estaciones: '1 estación', oyentes: 'Hasta 5,000', limitePistas: 500, color: 'border-slate-800 bg-slate-900/40 hover:border-purple-500/30', soloPrueba: false },
+    { nombre: 'Pro', precio: '25.00', original: '50.00', estaciones: '3 estaciones', oyentes: 'Hasta 25,000', limitePistas: 1000, color: 'border-slate-800 bg-slate-900/40 hover:border-pink-500/30', soloPrueba: false },
+    { nombre: 'Premium', precio: '100.00', original: '200.00', estaciones: '5 estaciones', oyentes: 'Ilimitados', limitePistas: 1500, color: 'border-slate-800 bg-slate-900/40 hover:border-amber-500/30', soloPrueba: false }
   ];
 
   useEffect(() => {
@@ -113,7 +113,7 @@ export default function App() {
     e.preventDefault();
     if (authEmail) {
       setUser({ email: authEmail });
-      setHasPaymentMethod(true); // Para simulación entra directo con tarjeta mock anterior
+      setHasPaymentMethod(true);
       setShowAuthModal(false);
       setCurrentTab('dashboard');
     }
@@ -177,39 +177,46 @@ export default function App() {
               <img src={estacionesSugeridas[0].img} alt="" className="w-full max-w-[280px] aspect-square object-cover rounded-2xl border border-white/5 shadow-2xl" />
             </section>
 
-            {/* RADIOS DE LA COMUNIDAD */}
-            <section className="space-y-4">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-400" /> Emisoras de la Comunidad</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {todasLasEstaciones.map((est) => (
-                  <div key={est.id} onClick={() => seleccionarEstacion(est)} className="bg-slate-900/20 border border-slate-900 rounded-2xl p-4 cursor-pointer hover:bg-slate-900/40 transition group">
-                    <div className="aspect-square rounded-xl overflow-hidden mb-3 relative">
-                      <img src={est.img} alt="" className="w-full h-full object-cover group-hover:scale-105 transition" />
-                      <span className="absolute top-2 left-2 bg-emerald-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded">● ONLINE</span>
-                    </div>
-                    <h4 className="font-bold text-sm text-white truncate">{est.title}</h4>
-                    <p className="text-xs text-slate-500 truncate">{est.genre}</p>
-                  </div>
-                ))}
+            {/* SECCIÓN MÓDULOS INSPIRADOS EN LAS CAPTURAS */}
+            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+              <div className="bg-slate-900/20 border border-slate-900 p-6 rounded-2xl space-y-3">
+                <div className="flex items-center gap-3"><Radio className="text-purple-400 w-5 h-5" /><h4 className="text-white font-bold text-base">Transmisión en Vivo</h4></div>
+                <p className="text-xs text-slate-400 leading-relaxed">Oyentes simultáneos parametrizados con ancho de banda totalmente ilimitado y creación de relays automatizados.</p>
+              </div>
+              <div className="bg-slate-900/20 border border-slate-900 p-6 rounded-2xl space-y-3">
+                <div className="flex items-center gap-3"><Disc className="text-pink-400 w-5 h-5" /><h4 className="text-white font-bold text-base">Módulo Auto-DJ</h4></div>
+                <p className="text-xs text-slate-400 leading-relaxed">Configura y gestiona listas de reproducción inteligentes en la nube para cuando tu estación esté desconectada.</p>
+              </div>
+              <div className="bg-slate-900/20 border border-slate-900 p-6 rounded-2xl space-y-3">
+                <div className="flex items-center gap-3"><BarChart3 className="text-cyan-400 w-5 h-5" /><h4 className="text-white font-bold text-base">Analíticas de Audiencia</h4></div>
+                <p className="text-xs text-slate-400 leading-relaxed">Reportes históricos a largo plazo y mapas geográficos en tiempo real incorporados para los miembros del plan.</p>
+              </div>
+              <div className="bg-slate-900/20 border border-slate-900 p-6 rounded-2xl space-y-3">
+                <div className="flex items-center gap-3"><DollarSign className="text-emerald-400 w-5 h-5" /><h4 className="text-white font-bold text-base">Monetización Integrada</h4></div>
+                <p className="text-xs text-slate-400 leading-relaxed">Recibe pagos e ingresos directos por los anuncios de audio reproducidos dinámicamente en tus estaciones.</p>
+              </div>
+              <div className="bg-slate-900/20 border border-slate-900 p-6 rounded-2xl space-y-3 lg:col-span-1">
+                <div className="flex items-center gap-3"><Mic className="text-amber-400 w-5 h-5" /><h4 className="text-white font-bold text-base">Graba tus Programas</h4></div>
+                <p className="text-xs text-slate-400 leading-relaxed">Crea podcasts automatizados a partir de las grabaciones directas de tus transmisiones de radio en vivo.</p>
               </div>
             </section>
           </div>
         )}
 
-        {/* VISTA: PLANES DE PRECIOS */}
+        {/* VISTA: PLANES DE PRECIOS ADAPTADOS A LA MAQUETA OSCURA */}
         {currentTab === 'pricing' && (
           <div className="space-y-8 max-w-6xl mx-auto">
             <div className="text-center space-y-2">
               <h2 className="text-3xl font-black text-white">Elige tu Plan de Emisión Industrial</h2>
-              <p className="text-slate-400 text-sm">Todos los planes incluyen 15 días de prueba gratuita. Se requiere registro de tarjeta para validación de cuenta.</p>
+              <p className="text-slate-400 text-sm">Escoge el plan ideal para tu audiencia. El soporte de tarjeta es requerido para validar la cuenta.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {tablaPlanes.map((plan, idx) => (
-                <div key={idx} className={`border rounded-2xl p-6 flex flex-col justify-between space-y-6 ${plan.color}`}>
+                <div key={idx} className={`border rounded-2xl p-6 flex flex-col justify-between space-y-6 transition-all duration-300 ${plan.color}`}>
                   <div className="space-y-4">
                     <div>
-                      <h4 className="text-lg font-bold text-white">{plan.nombre}</h4>
+                      <h4 className="text-lg font-bold text-white tracking-wide">{plan.nombre}</h4>
                       <div className="flex items-baseline gap-1 mt-2">
                         <span className="text-3xl font-black text-white">${plan.precio}</span>
                         <span className="text-xs text-slate-500">/ mes</span>
@@ -217,18 +224,27 @@ export default function App() {
                       <p className="text-xs text-slate-500 line-through mt-0.5">Precio original: ${plan.original}</p>
                     </div>
 
-                    <ul className="text-xs space-y-2.5 text-slate-300 border-t border-slate-900 pt-4">
-                      <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-pink-500" /> {plan.estaciones}</li>
-                      <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-pink-500" /> {plan.oyentes} simultáneos</li>
-                      <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-pink-500" /> Ancho de banda ilimitado</li>
+                    <ul className="text-xs space-y-2.5 text-slate-300 border-t border-slate-900/80 pt-4">
+                      <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-purple-400" /> {plan.estaciones}</li>
+                      <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-purple-400" /> {plan.oyentes} simultáneos</li>
+                      <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-purple-400" /> Ancho de banda ilimitado</li>
                       <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-purple-400" /> <strong>{plan.limitePistas} pistas</strong> de AutoDJ</li>
-                      <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-purple-400" /> Calidad hasta 128kbps</li>
+                      <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-purple-400" /> Calidad de audio hasta 128kbps</li>
+                      <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-cyan-400" /> Estadísticas y analíticas de países</li>
+                      <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Monetización por anuncios de audio</li>
+                      <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-amber-400" /> Servidor automático para Podcasts</li>
                     </ul>
                   </div>
 
-                  <button onClick={() => { setSelectedPlan(plan); setIsRegistering(true); setShowAuthModal(true); }} className="w-full bg-white text-slate-950 font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider hover:bg-slate-200 transition">
-                    Prueba Gratis 15 días
-                  </button>
+                  {plan.soloPrueba ? (
+                    <button onClick={() => { setSelectedPlan(plan); setIsRegistering(true); setShowAuthModal(true); }} className="w-full bg-white text-slate-950 font-black py-3 rounded-xl text-xs uppercase tracking-wider hover:bg-slate-200 transition">
+                      Prueba Gratis 15 días
+                    </button>
+                  ) : (
+                    <button onClick={() => { setSelectedPlan(plan); setIsRegistering(true); setShowAuthModal(true); }} className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider border border-slate-800 hover:border-purple-500/40 transition">
+                      Adquirir Plan {plan.nombre}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -241,7 +257,7 @@ export default function App() {
             <div className="flex justify-between items-center border-b border-slate-900 pb-4">
               <div>
                 <h2 className="text-2xl font-black text-white flex items-center gap-2"><RadioTower className="w-6 h-6 text-purple-400" /> Consola del Locutor Pro</h2>
-                <p className="text-xs text-slate-400">Plan Activo: <span className="text-pink-400 font-bold">{selectedPlan?.nombre || 'Básico'}</span> (Modo Prueba de 15 Días)</p>
+                <p className="text-xs text-slate-400">Plan Activo: <span className="text-pink-400 font-bold">{selectedPlan?.nombre || 'Básico'}</span> {selectedPlan?.soloPrueba && '(Modo Prueba de 15 Días)'}</p>
               </div>
             </div>
 
@@ -258,9 +274,9 @@ export default function App() {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
-                {/* COLUMNA 1: ANALÍTICAS EN TIEMPO REAL */}
+                {/* COLUMNA 1: ANALÍTICAS EN TIEMPO REAL (ZENO TOOLS STYLE) */}
                 <div className="bg-[#0b0818] border border-purple-950/40 rounded-2xl p-6 space-y-6">
-                  <h3 className="font-bold text-white text-sm uppercase tracking-wider flex items-center gap-2 text-slate-400"><Users className="w-4 h-4 text-cyan-400" /> Audiencia en Vivo</h3>
+                  <h3 className="font-bold text-white text-sm uppercase tracking-wider flex items-center gap-2 text-slate-400"><Users className="w-4 h-4 text-cyan-400" /> Audiencia Global</h3>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-[#110e24] p-4 rounded-xl border border-slate-900">
@@ -274,12 +290,12 @@ export default function App() {
                   </div>
 
                   <div className="space-y-3">
-                    <h4 className="text-xs font-bold text-slate-400 flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-purple-400" /> Ubicaciones Principales</h4>
+                    <h4 className="text-xs font-bold text-slate-400 flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-purple-400" /> Top Países</h4>
                     <div className="space-y-2 text-xs">
-                      <div className="flex justify-between items-center bg-slate-900/40 p-2 rounded-lg"><span>🇲🇽 México</span><span className="font-mono text-cyan-400">145 oyentes</span></div>
-                      <div className="flex justify-between items-center bg-slate-900/40 p-2 rounded-lg"><span>🇺🇸 Estados Unidos</span><span className="font-mono text-cyan-400">98 oyentes</span></div>
-                      <div className="flex justify-between items-center bg-slate-900/40 p-2 rounded-lg"><span>🇪🇸 España</span><span className="font-mono text-cyan-400">64 oyentes</span></div>
-                      <div className="flex justify-between items-center bg-slate-900/40 p-2 rounded-lg"><span>🇨🇴 Colombia</span><span className="font-mono text-cyan-400">41 oyentes</span></div>
+                      <div className="flex justify-between items-center bg-slate-900/40 p-2 rounded-lg"><span>🇲🇽 México</span><span className="font-mono text-cyan-400">1909 oyentes</span></div>
+                      <div className="flex justify-between items-center bg-slate-900/40 p-2 rounded-lg"><span>🇺🇸 Estados Unidos</span><span className="font-mono text-cyan-400">707 oyentes</span></div>
+                      <div className="flex justify-between items-center bg-slate-900/40 p-2 rounded-lg"><span>🇬🇹 Guatemala</span><span className="font-mono text-cyan-400">70 oyentes</span></div>
+                      <div className="flex justify-between items-center bg-slate-900/40 p-2 rounded-lg"><span>🇸🇻 El Salvador</span><span className="font-mono text-cyan-400">28 oyentes</span></div>
                     </div>
                   </div>
                 </div>
@@ -308,19 +324,23 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* COLUMNA 3: DATOS DE CONEXIÓN EN VIVO */}
+                {/* COLUMNA 3: MONETIZACIÓN Y PODCASTS */}
                 <div className="bg-[#0b0818] border border-purple-950/40 rounded-2xl p-6 space-y-4">
-                  <h3 className="font-bold text-white text-sm uppercase tracking-wider flex items-center gap-2 text-slate-400"><RadioTower className="w-4 h-4 text-purple-400" /> Transmisión en Vivo</h3>
-                  <p className="text-xs text-slate-500">Si enciendes tu programa de transmisión local (OBS/BUTT), el AutoDJ se pausará de inmediato y tu voz saldrá al aire.</p>
+                  <h3 className="font-bold text-white text-sm uppercase tracking-wider flex items-center gap-2 text-slate-400"><DollarSign className="w-4 h-4 text-emerald-400" /> Panel de Control Avanzado</h3>
                   
-                  <div className="space-y-3">
-                    <div className="bg-[#110e24] p-3 rounded-xl border border-slate-900 space-y-1">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">URL Servidor</span>
-                      <p className="text-xs font-mono text-slate-300">icecast.fredradio.com:8000/live</p>
-                    </div>
-                    <div className="bg-[#110e24] p-3 rounded-xl border border-slate-900 space-y-1">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Clave Secreta</span>
-                      <p className="text-xs font-mono text-pink-400">fred_live_key_{miEstacionPropia.id}</p>
+                  {/* Bloque Monetización */}
+                  <div className="bg-[#110e24] p-3 rounded-xl border border-slate-900 space-y-1">
+                    <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider">Ingresos Estimados por Anuncios</span>
+                    <p className="text-xl font-black text-white font-mono">$3,488.00</p>
+                    <p className="text-[10px] text-slate-500">3,100,369 Impresiones de audio reproducidas</p>
+                  </div>
+
+                  {/* Bloque Grabaciones / Podcast */}
+                  <div className="bg-[#110e24] p-3 rounded-xl border border-slate-900 space-y-2">
+                    <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1"><Mic className="w-3 h-3" /> Grabador de Programas (Podcasts)</span>
+                    <p className="text-xs text-slate-300">Generación de RSS feed automática activada.</p>
+                    <div className="bg-slate-950 p-2 rounded border border-slate-900 text-[10px] font-mono text-slate-400 truncate">
+                      https://podcast.fredradio.com/feed/{miEstacionPropia.id}
                     </div>
                   </div>
                 </div>
@@ -347,7 +367,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* MODAL DE AUTENTICACIÓN / PAGO (CORREGIDO) */}
+      {/* MODAL DE AUTENTICACIÓN / PAGO */}
       {showAuthModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-[#090714] border border-purple-950/40 rounded-2xl p-6 relative space-y-6">
@@ -358,22 +378,21 @@ export default function App() {
                 {isRegistering ? `Plan Seleccionado: ${selectedPlan?.nombre || 'Básico'}` : 'Acceso Locutores'}
               </span>
               <h3 className="text-xl font-bold text-white">
-                {isRegistering ? 'Comienza tus 15 días gratis' : 'Ingresa a tu Consola'}
+                {isRegistering ? (selectedPlan?.soloPrueba ? 'Comienza tus 15 días gratis' : 'Configura tu suscripción') : 'Ingresa a tu Consola'}
               </h3>
               <p className="text-xs text-slate-400">
-                {isRegistering ? 'No se realizará ningún cargo hoy. Cancela cuando quieras.' : 'Introduce tus credenciales de emisión.'}
+                {isRegistering ? (selectedPlan?.soloPrueba ? 'No se realizará ningún cargo hoy.' : 'Acceso inmediato a tu servidor.') : 'Introduce tus credenciales de emisión.'}
               </p>
             </div>
 
             {isRegistering ? (
-              /* MODO REGISTRO: PIDE CORREO + TARJETA DE VALIDACIÓN */
               <form onSubmit={procesarPagoTarjeta} className="space-y-4">
                 <div className="space-y-2">
                   <input type="email" required placeholder="Tu correo electrónico" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-[#0d0a1c] border border-slate-900 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none" />
                 </div>
 
                 <div className="bg-[#0e0b20] border border-purple-900/20 p-4 rounded-xl space-y-3">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-pink-500" /> Validación de Tarjeta</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-pink-500" /> Información de Pago</span>
                   
                   <input type="text" required placeholder="0000 0000 0000 0000" maxLength="16" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} className="w-full bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-pink-500 font-mono" />
                   
@@ -384,11 +403,10 @@ export default function App() {
                 </div>
 
                 <button type="submit" className="w-full bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4" /> Validar Cuenta y Activar Prueba
+                  <ShieldCheck className="w-4 h-4" /> {selectedPlan?.soloPrueba ? 'Activar Prueba Gratuita' : 'Activar Servidor Industrial'}
                 </button>
               </form>
             ) : (
-              /* MODO LOGIN DIRECTO: SOLO CORREO */
               <form onSubmit={ejecutarLoginDirecto} className="space-y-4">
                 <input type="email" required placeholder="Tu correo electrónico registrado" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-[#0d0a1c] border border-slate-900 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none" />
                 <input type="password" placeholder="Contraseña" className="w-full bg-[#0d0a1c] border border-slate-900 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none" />
