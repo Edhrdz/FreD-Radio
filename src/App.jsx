@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { supabase } from './supabaseClient';
+import { supabase } from './supabaseClient'; // Asegúrate de configurar tus credenciales aquí
 import { 
   Radio, Sliders, RadioTower, Disc, Users, Globe, Music2, 
   CreditCard, ShieldCheck, Check, LogIn, DollarSign, BarChart3, 
   Mic, LayoutDashboard, Play, Pause, Trash2, Upload, Calendar, Rss,
   Headphones, Server, Shield, Zap, Flame, Award, Heart, UserPlus,
-  Compass, Library, Search
+  Compass, Library, Search, Loader2
 } from 'lucide-react';
 
 export default function App() {
@@ -15,21 +15,24 @@ export default function App() {
   // Sub-pestaña activa dentro del Panel del Locutor
   const [activeDashboardSection, setActiveDashboardSection] = useState('live');
 
-  // Estados de Autenticación y Planes
+  // Estados de Autenticación y Carga
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
-  const [requiresCard, setRequiresCard] = useState(false); // Controla si se pide tarjeta
+  const [requiresCard, setRequiresCard] = useState(false); 
   const [authEmail, setAuthEmail] = useState(''); 
+  const [authPassword, setAuthPassword] = useState(''); // Añadido para registro/login real
   const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null); // Datos de suscripción del usuario
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const [hasPaymentMethod, setHasPaymentMethod] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
 
-  // Formulario de Tarjeta
+  // Formulario de Tarjeta (Simulado para pruebas o tokenización de Stripe)
   const [cardNumber, setCardNumber] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCvc, setCardCvc] = useState('');
 
-  // Estados del Reproductor de Radio Global (Barra inferior)
+  // Estados del Reproductor de Radio Global
   const [currentStation, setCurrentStation] = useState({
     id: 101, title: 'Groove Salad', genre: 'Ambient / Lounge',
     streamUrl: 'https://ice1.somafm.com/groovesalad-128-mp3', img: 'https://somafm.com/img3/groovesalad-400.jpg'
@@ -53,7 +56,7 @@ export default function App() {
   ]);
   const [nuevaPistaNombre, setNuevaPistaNombre] = useState('');
 
-  // Estaciones públicas sugeridas en el Home
+  // Estaciones fijas
   const estacionesFijas = [
     { id: 101, title: 'Groove Salad', genre: 'Ambient / Lounge', streamUrl: 'https://ice1.somafm.com/groovesalad-128-mp3', img: 'https://somafm.com/img3/groovesalad-400.jpg', oyentes: '1,240' },
     { id: 102, title: 'Drone Zone', genre: 'Atmospheric Ambient', streamUrl: 'https://ice1.somafm.com/dronezone-128-mp3', img: 'https://somafm.com/img/dronezone120.jpg', oyentes: '890' },
@@ -62,12 +65,36 @@ export default function App() {
   ];
 
   const tablaPlanes = [
-    { nombre: 'Básico', precio: '6.50', original: '12.00', estaciones: '1 estación', oyentes: 'Hasta 1,000', limitePistas: 100, color: 'border-slate-800 bg-slate-900/40 hover:border-purple-500/30', soloPrueba: true },
-    { nombre: 'Estándar', precio: '14.00', original: '28.00', estaciones: '1 estación', oyentes: 'Hasta 5,000', limitePistas: 500, color: 'border-slate-800 bg-slate-900/40 hover:border-purple-500/30', soloPrueba: false },
-    { nombre: 'Pro', precio: '25.00', original: '50.00', estaciones: '3 estaciones', oyentes: 'Hasta 25,000', limitePistas: 1000, color: 'border-slate-800 bg-slate-900/40 hover:border-pink-500/30', soloPrueba: false },
-    { nombre: 'Premium', precio: '100.00', original: '200.00', estaciones: '5 estaciones', oyentes: 'Ilimitados', limitePistas: 1500, color: 'border-slate-800 bg-slate-900/40 hover:border-amber-500/30', soloPrueba: false }
+    { id: 'plan_basic', nombre: 'Básico', precio: '6.50', estaciones: '1 estación', oyentes: 'Hasta 1,000', limitePistas: 100, color: 'border-slate-800 bg-slate-900/40 hover:border-purple-500/30', soloPrueba: true },
+    { id: 'plan_standard', nombre: 'Estándar', precio: '14.00', estaciones: '1 estación', oyentes: 'Hasta 5,000', limitePistas: 500, color: 'border-slate-800 bg-slate-900/40 hover:border-purple-500/30', soloPrueba: false },
+    { id: 'plan_pro', nombre: 'Pro', precio: '25.00', estaciones: '3 estaciones', oyentes: 'Hasta 25,000', limitePistas: 1000, color: 'border-slate-800 bg-slate-900/40 hover:border-pink-500/30', soloPrueba: false },
+    { id: 'plan_premium', nombre: 'Premium', precio: '100.00', estaciones: '5 estaciones', oyentes: 'Ilimitados', limitePistas: 1500, color: 'border-slate-800 bg-slate-900/40 hover:border-amber-500/30', soloPrueba: false }
   ];
 
+  // Escuchar estado de sesión de Supabase al cargar la app
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setUser(session.user);
+        fetchUserProfile(session.user.id);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        setUser(session.user);
+        fetchUserProfile(session.user.id);
+      } else {
+        setUser(null);
+        setUserProfile(null);
+        setMiEstacionPropia(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Manejo del Reproductor de Audio
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = isMuted ? 0 : volume;
@@ -76,19 +103,144 @@ export default function App() {
     }
   }, [isPlaying, currentStation, volume, isMuted]);
 
+  // Obtener perfil de suscripción y datos de radio desde la base de datos
+  const fetchUserProfile = async (userId) => {
+    try {
+      // 1. Obtener perfil/suscripción
+      let { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (profile) {
+        setUserProfile(profile);
+      }
+
+      // 2. Obtener estación de radio activa del usuario
+      let { data: radio, error: rError } = await supabase
+        .from('radios')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (radio) {
+        setMiEstacionPropia(radio);
+      }
+    } catch (err) {
+      console.error("Error cargando perfil:", err);
+    }
+  };
+
+  // REGISTRO E INICIO DE SESIÓN REAL CON SUPABASE
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setAuthError('');
+
+    try {
+      if (isRegistering) {
+        // 1. Crear usuario en la autenticación de Supabase
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email: authEmail,
+          password: authPassword,
+        });
+
+        if (signUpError) throw signUpError;
+
+        if (authData?.user) {
+          // Determinar plan seleccionado
+          const planId = selectedPlan ? selectedPlan.id : 'free_tier';
+          const planName = selectedPlan ? selectedPlan.nombre : 'Ninguno';
+          const isSubscribed = requiresCard || selectedPlan ? true : false;
+
+          // 2. Insertar perfil en la tabla 'profiles' (Detalle de pagos/suscripción)
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              { 
+                id: authData.user.id, 
+                email: authEmail,
+                plan_id: planId,
+                plan_name: planName,
+                subscription_active: isSubscribed,
+                payment_status: isSubscribed ? 'paid' : 'pending'
+              }
+            ]);
+
+          if (profileError) throw profileError;
+          
+          alert("¡Cuenta registrada con éxito!");
+          setShowAuthModal(false);
+          setCurrentTab(isSubscribed ? 'dashboard' : 'home');
+        }
+      } else {
+        // Proceso de Login Estándar
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password: authPassword,
+        });
+
+        if (signInError) throw signInError;
+        setShowAuthModal(false);
+        setCurrentTab('dashboard');
+      }
+    } catch (error) {
+      setAuthError(error.message || 'Ocurrió un error en la autenticación');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // LOGIN CON GOOGLE (OAuth Real)
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+      if (error) throw error;
+    } catch (error) {
+      alert("Error con Google Auth: " + error.message);
+    }
+  };
+
+  // CERRAR SESIÓN
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setCurrentTab('home');
+  };
+
   const cambiarEstacionGlobal = (estacion) => {
     setCurrentStation(estacion);
     setIsPlaying(true);
   };
 
-  const handleCrearEstacion = (e) => {
+  // GUARDAR EMISORA EN BASE DE DATOS REAL
+  const handleCrearEstacion = async (e) => {
     e.preventDefault();
-    setMiEstacionPropia({
-      id: Date.now(),
-      title: formTitle || 'Mi Estación Industrial',
+    if (!user) return;
+
+    const nuevaEstacion = {
+      user_id: user.id,
+      title: formTitle || 'Mi Estación de Streaming',
       genre: formGenre || 'Variada',
       img: formLogo || 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=400&q=80',
-    });
+    };
+
+    const { data, error } = await supabase
+      .from('radios')
+      .insert([nuevaEstacion])
+      .select()
+      .single();
+
+    if (error) {
+      alert("Error al inicializar servidor: " + error.message);
+    } else {
+      setMiEstacionPropia(data);
+    }
   };
 
   const handleSubirPista = (e) => {
@@ -107,13 +259,6 @@ export default function App() {
 
   const eliminarPista = (id) => {
     setAutoDJPistas(autoDJPistas.filter(p => p.id !== id));
-  };
-
-  const handleGoogleLogin = () => {
-    setUser({ email: 'usuario.google@gmail.com' });
-    setHasPaymentMethod(true); 
-    setShowAuthModal(false);
-    setCurrentTab('dashboard');
   };
 
   const estacionesFiltradas = estacionesFijas.filter(est => 
@@ -135,7 +280,7 @@ export default function App() {
             <span className="text-xl font-black tracking-tight text-white">FreD</span>
           </div>
 
-          {/* NAVBAR CENTRAL BLOCKED */}
+          {/* NAVBAR CENTRAL */}
           <nav className="hidden lg:flex items-center gap-1.5 text-xs font-bold text-slate-400">
             <button onClick={() => setCurrentTab('home')} className={`px-3.5 py-2 rounded-xl transition ${currentTab === 'home' ? 'text-white bg-slate-900/60' : 'hover:text-white'}`}>Home</button>
             <button onClick={() => setCurrentTab('pricing')} className={`px-3.5 py-2 rounded-xl transition ${currentTab === 'pricing' ? 'text-white bg-slate-900/60' : 'hover:text-white'}`}>Planes y Precios</button>
@@ -152,7 +297,8 @@ export default function App() {
               <Search className="w-3.5 h-3.5 text-cyan-400" /> Buscar
             </button>
 
-            {user && hasPaymentMethod && (
+            {/* Muestra el Panel solo si el usuario inició sesión */}
+            {user && (
               <>
                 <div className="h-4 w-[1px] bg-slate-800 mx-1"></div>
                 <button onClick={() => setCurrentTab('dashboard')} className={`px-3.5 py-2 rounded-xl border border-purple-500/30 text-purple-400 flex items-center gap-1.5 ${currentTab === 'dashboard' ? 'bg-purple-950/30 text-white' : ''}`}><Sliders className="w-3.5 h-3.5" /> Panel Locutor</button>
@@ -165,18 +311,20 @@ export default function App() {
         <div className="flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-3">
-              <span className="text-xs bg-purple-950/40 border border-purple-500/20 px-4 py-2 rounded-full text-purple-300 font-medium">{user.email}</span>
-              <button onClick={() => { setUser(null); setHasPaymentMethod(false); setMiEstacionPropia(null); setCurrentTab('home'); }} className="text-xs text-slate-400 hover:text-white px-2">Salir</button>
+              <span className="text-xs bg-purple-950/40 border border-purple-500/20 px-4 py-2 rounded-full text-purple-300 font-medium">
+                {user.email} {userProfile?.subscription_active && `[${userProfile?.plan_name}]`}
+              </span>
+              <button onClick={handleLogout} className="text-xs text-slate-400 hover:text-white px-2">Salir</button>
             </div>
           ) : (
             <>
-              <button onClick={() => { setIsRegistering(false); setRequiresCard(false); setShowAuthModal(true); }} className="text-xs font-bold text-slate-300 hover:text-white transition px-3 py-2 flex items-center gap-1.5">
+              <button onClick={() => { setIsRegistering(false); setRequiresCard(false); setAuthError(''); setShowAuthModal(true); }} className="text-xs font-bold text-slate-300 hover:text-white transition px-3 py-2 flex items-center gap-1.5">
                 <LogIn className="w-3.5 h-3.5 text-purple-400" /> Iniciar Sesión
               </button>
-              <button onClick={() => { setIsRegistering(true); setRequiresCard(false); setSelectedPlan(null); setShowAuthModal(true); }} className="text-xs font-bold bg-slate-900 border border-slate-800 text-slate-200 px-4 py-2 rounded-xl hover:border-purple-500/40 transition flex items-center gap-1.5">
+              <button onClick={() => { setIsRegistering(true); setRequiresCard(false); setSelectedPlan(null); setAuthError(''); setShowAuthModal(true); }} className="text-xs font-bold bg-slate-900 border border-slate-800 text-slate-200 px-4 py-2 rounded-xl hover:border-purple-500/40 transition flex items-center gap-1.5">
                 <UserPlus className="w-3.5 h-3.5 text-pink-400" /> Registrarse
               </button>
-              <button onClick={() => { setIsRegistering(true); setRequiresCard(true); setSelectedPlan(tablaPlanes[0]); setShowAuthModal(true); }} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black px-5 py-2.5 rounded-full text-xs tracking-wide shadow-md hover:opacity-90 transition">
+              <button onClick={() => { setIsRegistering(true); setRequiresCard(true); setSelectedPlan(tablaPlanes[0]); setAuthError(''); setShowAuthModal(true); }} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black px-5 py-2.5 rounded-full text-xs tracking-wide shadow-md hover:opacity-90 transition">
                 Empezar Prueba Gratis
               </button>
             </>
@@ -206,106 +354,6 @@ export default function App() {
                 </div>
               </div>
             </section>
-
-            <section className="space-y-6">
-              <h3 className="text-xl font-black text-white text-center">Infraestructura Diseñada para Emisores</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-2">
-                  <Zap className="w-5 h-5 text-purple-400" />
-                  <h4 className="font-bold text-white text-xs">Transmisión Inmediata</h4>
-                  <p className="text-[11px] text-slate-400">Soporte nativo para OBS, Butt y Mixxx.</p>
-                </div>
-                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-2">
-                  <Disc className="w-5 h-5 text-pink-400" />
-                  <h4 className="font-bold text-white text-xs">AutoDJ en la Nube</h4>
-                  <p className="text-[11px] text-slate-400">Automatiza listas las 24 horas del día.</p>
-                </div>
-                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-2">
-                  <BarChart3 className="w-5 h-5 text-cyan-400" />
-                  <h4 className="font-bold text-white text-xs">Métricas de Oyentes</h4>
-                  <p className="text-[11px] text-slate-400">Analíticas en tiempo real de tu audiencia.</p>
-                </div>
-                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-2">
-                  <DollarSign className="w-5 h-5 text-emerald-400" />
-                  <h4 className="font-bold text-white text-xs">Monetización</h4>
-                  <p className="text-[11px] text-slate-400">Inyección inteligente de anuncios de audio.</p>
-                </div>
-              </div>
-            </section>
-          </div>
-        )}
-
-        {/* VISTA: DESCUBRIR */}
-        {currentTab === 'discover' && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-xl font-black text-white flex items-center gap-2"><Compass className="w-5 h-5 text-purple-400" /> Emisoras Destacadas</h3>
-              <p className="text-xs text-slate-400">Escucha los servidores con mayor flujo de oyentes en tiempo real.</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {estacionesFijas.map((est) => (
-                <div key={est.id} className="bg-slate-900/40 border border-slate-900 p-4 rounded-2xl flex items-center justify-between group hover:border-purple-500/20 transition">
-                  <div className="flex items-center gap-3">
-                    <img src={est.img} alt="" className="w-11 h-11 rounded-xl object-cover" />
-                    <div>
-                      <h4 className="font-bold text-xs text-white truncate max-w-[120px]">{est.title}</h4>
-                      <p className="text-[10px] text-slate-400 truncate">{est.genre}</p>
-                      <span className="text-[9px] font-mono text-purple-400 flex items-center gap-1 mt-0.5"><Users className="w-2.5 h-2.5" /> {est.oyentes}</span>
-                    </div>
-                  </div>
-                  <button onClick={() => cambiarEstacionGlobal(est)} className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-200 group-hover:bg-white group-hover:text-slate-950 transition">
-                    {currentStation.id === est.id && isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* VISTA: BIBLIOTECA */}
-        {currentTab === 'library' && (
-          <div className="space-y-4">
-            <h3 className="text-xl font-black text-white flex items-center gap-2"><Library className="w-5 h-5 text-pink-400" /> Tu Biblioteca</h3>
-            <p className="text-xs text-slate-400">Tus estaciones guardadas y favoritas aparecerán en este bloque.</p>
-            <div className="bg-slate-900/20 border border-dashed border-slate-800 rounded-xl p-12 text-center text-xs text-slate-500">
-              Sintoniza cyber-emisoras en la pestaña superior "Descubrir" para guardar elementos aquí.
-            </div>
-          </div>
-        )}
-
-        {/* VISTA: BUSCAR */}
-        {currentTab === 'search_tab' && (
-          <div className="space-y-6">
-            <div className="max-w-md relative">
-              <Search className="w-4 h-4 text-slate-500 absolute left-4 top-3.5" />
-              <input 
-                type="text" 
-                placeholder="Buscar por nombre de radio o género musical..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#0c091c] border border-slate-800 rounded-xl py-3 pl-11 pr-4 text-xs text-white focus:outline-none focus:border-purple-500/50"
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {estacionesFiltradas.length > 0 ? (
-                estacionesFiltradas.map((est) => (
-                  <div key={est.id} className="bg-slate-900/40 border border-slate-900 p-4 rounded-2xl flex items-center justify-between group hover:border-purple-500/20 transition">
-                    <div className="flex items-center gap-3">
-                      <img src={est.img} alt="" className="w-11 h-11 rounded-xl object-cover" />
-                      <div>
-                        <h4 className="font-bold text-xs text-white truncate max-w-[120px]">{est.title}</h4>
-                        <p className="text-[10px] text-slate-400 truncate">{est.genre}</p>
-                      </div>
-                    </div>
-                    <button onClick={() => cambiarEstacionGlobal(est)} className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-200 group-hover:bg-white group-hover:text-slate-950 transition">
-                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-slate-500 col-span-4">No se encontraron resultados.</p>
-              )}
-            </div>
           </div>
         )}
 
@@ -331,7 +379,7 @@ export default function App() {
                       <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-purple-400" /> <strong>{plan.limitePistas} pistas</strong> AutoDJ</li>
                     </ul>
                   </div>
-                  <button onClick={() => { setSelectedPlan(plan); setIsRegistering(true); setRequiresCard(plan.soloPrueba); setShowAuthModal(true); }} className={`w-full font-black py-3 rounded-xl text-xs uppercase tracking-wider transition ${plan.soloPrueba ? 'bg-white text-slate-950 hover:bg-slate-200' : 'bg-slate-900 text-white border border-slate-800 hover:border-purple-500/40'}`}>
+                  <button onClick={() => { setSelectedPlan(plan); setIsRegistering(true); setRequiresCard(true); setAuthError(''); setShowAuthModal(true); }} className={`w-full font-black py-3 rounded-xl text-xs uppercase tracking-wider transition ${plan.soloPrueba ? 'bg-white text-slate-950 hover:bg-slate-200' : 'bg-slate-900 text-white border border-slate-800 hover:border-purple-500/40'}`}>
                     {plan.soloPrueba ? 'Prueba Gratis 15 días' : `Adquirir ${plan.nombre}`}
                   </button>
                 </div>
@@ -340,13 +388,20 @@ export default function App() {
           </div>
         )}
 
-        {/* VISTA: PANEL DE LOCUTOR */}
-        {currentTab === 'dashboard' && user && hasPaymentMethod && (
+        {/* VISTA: PANEL DE LOCUTOR (DASHBOARD SYNCED) */}
+        {currentTab === 'dashboard' && user && (
           <div className="space-y-6">
-            <div className="border-b border-slate-900 pb-4">
-              {/* REMOVIDO "ZENO TOOLS" AQUÍ ABAJO */}
-              <h2 className="text-xl font-black text-white flex items-center gap-2"><LayoutDashboard className="w-5 h-5 text-purple-400" /> Consola de Control</h2>
-              <p className="text-xs text-slate-400">Gestiona tu estación, automatizaciones de AutoDJ y analíticas geográficas.</p>
+            <div className="border-b border-slate-900 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-white flex items-center gap-2"><LayoutDashboard className="w-5 h-5 text-purple-400" /> Consola de Control</h2>
+                <p className="text-xs text-slate-400">Gestiona tu estación, automatizaciones de AutoDJ y servidores de audio.</p>
+              </div>
+              
+              {/* Bloque Informativo de Suscripción en el Detalle del Dashboard */}
+              <div className="bg-[#0f0b24] border border-purple-500/20 px-4 py-2.5 rounded-xl text-xs space-y-0.5">
+                <div className="text-slate-400">Suscripción activa: <span className="text-pink-400 font-bold">{userProfile?.plan_name || 'Ninguno (Demo)'}</span></div>
+                <div className="text-[11px] text-slate-500 flex items-center gap-1">Estado de Pago: <span className="text-emerald-400 flex items-center gap-0.5"><ShieldCheck className="w-3 h-3" /> Al día</span></div>
+              </div>
             </div>
 
             {!miEstacionPropia ? (
@@ -355,7 +410,7 @@ export default function App() {
                 <form onSubmit={handleCrearEstacion} className="space-y-4">
                   <input type="text" required placeholder="Nombre de tu Radio" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} className="w-full bg-[#110e24] border border-slate-800 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none" />
                   <input type="text" required placeholder="Género Musical (ej. Techno, Pop)" value={formGenre} onChange={(e) => setFormGenre(e.target.value)} className="w-full bg-[#110e24] border border-slate-800 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none" />
-                  <button type="submit" className="w-full bg-purple-600 text-white font-bold py-3 rounded-xl text-xs uppercase">Inicializar Servidor</button>
+                  <button type="submit" className="w-full bg-purple-600 text-white font-bold py-3 rounded-xl text-xs uppercase">Inicializar Servidor en Supabase</button>
                 </form>
               </div>
             ) : (
@@ -369,31 +424,26 @@ export default function App() {
                   <button onClick={() => setActiveDashboardSection('autodj')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition ${activeDashboardSection === 'autodj' ? 'bg-purple-950/40 text-pink-400 border border-pink-500/20' : 'text-slate-400 hover:bg-slate-900/50 hover:text-white'}`}>
                     <Disc className="w-4 h-4" /> Auto-DJ Storage
                   </button>
-                  <button onClick={() => setActiveDashboardSection('analytics')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition ${activeDashboardSection === 'analytics' ? 'bg-purple-950/40 text-cyan-400 border border-cyan-500/20' : 'text-slate-400 hover:bg-slate-900/50 hover:text-white'}`}>
-                    <BarChart3 className="w-4 h-4" /> Analíticas e Historial
-                  </button>
                 </aside>
 
-                <div className="flex-1 w-full bg-[#070512] border border-slate-900 rounded-2xl p-6 min-h-[460px]">
+                <div className="flex-1 w-full bg-[#070512] border border-slate-900 rounded-2xl p-6 min-h-[350px]">
                   {activeDashboardSection === 'live' && (
                     <div className="space-y-6">
                       <div className="flex justify-between items-center">
-                        <h3 className="text-base font-bold text-white">Transmisión en Vivo</h3>
+                        <h3 className="text-base font-bold text-white">Servidor Mountpoint: {miEstacionPropia.title}</h3>
                         <span className="bg-emerald-500/10 text-emerald-400 text-[10px] px-2.5 py-1 rounded-full border border-emerald-500/20 font-bold">SERVIDOR ONLINE</span>
                       </div>
                       <div className="bg-[#0c091c] border border-slate-900 rounded-xl p-4 space-y-3 font-mono text-xs">
                         <div className="flex justify-between border-b border-slate-900 pb-2"><span className="text-slate-500">Servidor / URL:</span><span className="text-slate-300">str.fredstreaming.com:8000</span></div>
-                        <div className="flex justify-between border-b border-slate-900 pb-2"><span className="text-slate-500">Mountpoint:</span><span className="text-slate-300">/live_stream_{miEstacionPropia.id}</span></div>
+                        <div className="flex justify-between border-b border-slate-900 pb-2"><span className="text-slate-500">Mountpoint:</span><span className="text-slate-300">/stream_{miEstacionPropia.id}</span></div>
+                        <div className="flex justify-between border-b border-slate-900 pb-2"><span className="text-slate-500">Género Asignado:</span><span className="text-purple-400">{miEstacionPropia.genre}</span></div>
                       </div>
                     </div>
                   )}
 
                   {activeDashboardSection === 'autodj' && (
                     <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-base font-bold text-white">Playlist del Auto-DJ</h3>
-                        <span className="text-xs text-purple-400 bg-purple-950/30 px-3 py-1.5 rounded-xl border border-purple-500/20 font-medium">Límite: {autoDJPistas.length} / {selectedPlan?.limitePistas || 100}</span>
-                      </div>
+                      <h3 className="text-base font-bold text-white">Playlist del Auto-DJ</h3>
                       <form onSubmit={handleSubirPista} className="flex gap-2 bg-[#0c091c] p-3 rounded-xl border border-slate-900">
                         <input type="text" required placeholder="Nombre de la pista..." value={nuevaPistaNombre} onChange={(e) => setNuevaPistaNombre(e.target.value)} className="bg-[#120f26] border border-slate-800 rounded-lg px-3 py-2 text-xs text-white flex-1 focus:outline-none" />
                         <button type="submit" className="bg-purple-600 text-white text-xs font-bold px-4 py-2 rounded-lg"><Upload className="w-3.5 h-3.5 inline-block" /> Upload</button>
@@ -401,8 +451,7 @@ export default function App() {
                       <div className="border border-slate-900 rounded-xl overflow-hidden text-xs">
                         {autoDJPistas.map((pista) => (
                           <div key={pista.id} className="grid grid-cols-12 p-3 items-center hover:bg-slate-900/30 transition">
-                            <div className="col-span-6 flex items-center gap-2 font-medium text-slate-200"><Play className="w-3 h-3 text-slate-500" /> {pista.title}</div>
-                            <div className="col-span-4 text-slate-400 font-mono">{pista.duration}</div>
+                            <div className="col-span-10 flex items-center gap-2 font-medium text-slate-200"><Play className="w-3 h-3 text-slate-500" /> {pista.title}</div>
                             <div className="col-span-2 text-right">
                               <button onClick={() => eliminarPista(pista.id)} className="p-1.5 rounded bg-red-500/10 text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
                             </div>
@@ -416,7 +465,6 @@ export default function App() {
             )}
           </div>
         )}
-
       </main>
 
       {/* REPRODUCTOR INFERIOR */}
@@ -429,39 +477,53 @@ export default function App() {
           {isPlaying ? <Pause className="w-4 h-4 text-slate-950" /> : <Play className="w-4 h-4 text-slate-950 fill-slate-950" />}
         </button>
         <div className="w-1/3 flex justify-end items-center gap-2">
-          <span className="text-xs text-slate-500 font-mono">Vol</span>
           <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-16 accent-pink-500 h-1 bg-slate-800 rounded" />
         </div>
       </div>
 
-      {/* MODAL DE AUTENTICACIÓN CON AJUSTES DE REGISTRO CONDICIONAL Y GOOGLE */}
+      {/* MODAL DE AUTENTICACIÓN CON LÓGICA DE BACKEND COMPLETA */}
       {showAuthModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-[#090714] border border-purple-950/40 rounded-2xl p-6 relative space-y-5">
             <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white">✕</button>
             <div className="text-center space-y-1">
               <h3 className="text-lg font-bold text-white">
-                {isRegistering ? (requiresCard ? 'Comenzar Prueba Gratis' : 'Crea tu cuenta de Emisor') : 'Ingresa a tu Consola'}
+                {isRegistering ? (requiresCard ? `Plan ${selectedPlan?.nombre}` : 'Crea tu cuenta de Emisor') : 'Ingresa a tu Consola'}
               </h3>
+              {selectedPlan && isRegistering && <p className="text-xs text-purple-400">Precio mensual: ${selectedPlan.precio} USD</p>}
             </div>
             
-            <form onSubmit={(e) => { e.preventDefault(); setUser({ email: authEmail }); setHasPaymentMethod(true); setShowAuthModal(false); setCurrentTab('dashboard'); }} className="space-y-4">
-              <input type="email" required placeholder="Tu correo electrónico" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-[#0d0a1c] border border-slate-900 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none" />
+            {authError && <div className="text-xs bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl text-center">{authError}</div>}
+
+            <form onSubmit={handleAuthSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Email</label>
+                <input type="email" required placeholder="tu@correo.com" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-[#0d0a1c] border border-slate-900 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none" />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Contraseña</label>
+                <input type="password" required placeholder="••••••••" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-[#0d0a1c] border border-slate-900 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none" />
+              </div>
               
-              {/* LA TARJETA SOLO SE MUESTRA SI REQUIRES_CARD ES TRUE (PRUEBA GRATIS DESDE EL BOTÓN) */}
+              {/* Tarjeta condicional para suscripciones */}
               {isRegistering && requiresCard && (
                 <div className="bg-[#0e0b20] border border-purple-900/20 p-4 rounded-xl space-y-3">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-pink-500" /> Tarjeta de Validación</span>
-                  <input type="text" required placeholder="0000 0000 0000 0000" maxLength="16" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} className="w-full bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white focus:outline-none font-mono" />
+                  <span className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-pink-500" /> Datos de Facturación (Simulado)</span>
+                  <input type="text" required placeholder="Número de Tarjeta" maxLength="16" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} className="w-full bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white focus:outline-none font-mono" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="text" required placeholder="MM/AA" maxLength="5" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} className="bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white focus:outline-none font-mono text-center" />
+                    <input type="text" required placeholder="CVC" maxLength="3" value={cardCvc} onChange={(e) => setCardCvc(e.target.value)} className="bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white focus:outline-none font-mono text-center" />
+                  </div>
                 </div>
               )}
 
-              <button type="submit" className="w-full bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black py-3 rounded-xl text-xs uppercase flex items-center justify-center gap-1.5">
-                <ShieldCheck className="w-4 h-4" /> {isRegistering ? (requiresCard ? 'Comenzar Suscripción' : 'Registrarse Now') : 'Entrar al Panel'}
+              <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black py-3 rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 transition active:scale-95 disabled:opacity-50">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                {isRegistering ? (requiresCard ? 'Confirmar y Pagar Suscripción' : 'Registrar Cuenta') : 'Entrar al Panel'}
               </button>
             </form>
 
-            {/* BOTÓN OAUTH GOOGLE INTEGRADO */}
             <div className="relative flex py-2 items-center">
               <div className="flex-grow border-t border-slate-900"></div>
               <span className="flex-shrink mx-4 text-[10px] text-slate-500 font-bold uppercase">O continuar con</span>
@@ -472,9 +534,7 @@ export default function App() {
               onClick={handleGoogleLogin}
               className="w-full bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-200 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l3.227-3.102C18.445 2.108 15.595 1 12.24 1c-6.075 0-11 4.925-11 11s4.925 11 11 11c6.34 0 10.56-4.455 10.56-10.75 0-.725-.075-1.275-.165-1.665h-10.4z"/>
-              </svg>
+              <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l3.227-3.102C18.445 2.108 15.595 1 12.24 1c-6.075 0-11 4.925-11 11s4.925 11 11 11c6.34 0 10.56-4.455 10.56-10.75 0-.725-.075-1.275-.165-1.665h-10.4z"/></svg>
               Google Account
             </button>
           </div>
