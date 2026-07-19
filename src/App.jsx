@@ -1,14 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { Radio, Compass, Search, Sliders, PlusCircle, RadioTower, Key, Disc, Users, Globe, Music2, FolderPlus, CreditCard, ShieldCheck, Check, Sparkles } from 'lucide-react';
+import { Radio, Compass, Search, Sliders, PlusCircle, RadioTower, Key, Disc, Users, Globe, Music2, FolderPlus, CreditCard, ShieldCheck, Check, Sparkles, LogIn } from 'lucide-react';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('home'); 
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Estados de Autenticación y Planes
+  // Estados de Autenticación y Planes (Corregidos)
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [authEmail, setAuthEmail] = useState(''); // Variable corregida para evitar la pantalla negra
   const [user, setUser] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [hasPaymentMethod, setHasPaymentMethod] = useState(false);
@@ -100,8 +101,19 @@ export default function App() {
 
   const procesarPagoTarjeta = (e) => {
     e.preventDefault();
-    if (cardNumber && cardExpiry && cardCvc) {
+    if (authEmail && cardNumber && cardExpiry && cardCvc) {
+      setUser({ email: authEmail });
       setHasPaymentMethod(true);
+      setShowAuthModal(false);
+      setCurrentTab('dashboard');
+    }
+  };
+
+  const ejecutarLoginDirecto = (e) => {
+    e.preventDefault();
+    if (authEmail) {
+      setUser({ email: authEmail });
+      setHasPaymentMethod(true); // Para simulación entra directo con tarjeta mock anterior
       setShowAuthModal(false);
       setCurrentTab('dashboard');
     }
@@ -134,11 +146,17 @@ export default function App() {
             )}
           </nav>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {user ? (
-            <span className="text-xs bg-purple-950/40 border border-purple-500/20 px-4 py-2 rounded-full text-purple-300 font-medium">{user.email}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs bg-purple-950/40 border border-purple-500/20 px-4 py-2 rounded-full text-purple-300 font-medium">{user.email}</span>
+              <button onClick={() => { setUser(null); setHasPaymentMethod(false); setMiEstacionPropia(null); setCurrentTab('home'); }} className="text-xs text-slate-400 hover:text-white px-2">Salir</button>
+            </div>
           ) : (
-            <button onClick={() => { setIsRegistering(false); setShowAuthModal(true); }} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-bold px-6 py-2 rounded-full text-sm">Empezar Prueba Gratis</button>
+            <>
+              <button onClick={() => { setIsRegistering(false); setSelectedPlan(tablaPlanes[0]); setShowAuthModal(true); }} className="text-sm font-medium text-slate-300 hover:text-white px-4 py-2 rounded-xl flex items-center gap-1.5"><LogIn className="w-4 h-4" /> Iniciar Sesión</button>
+              <button onClick={() => { setIsRegistering(true); setSelectedPlan(tablaPlanes[0]); setShowAuthModal(true); }} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black px-5 py-2 rounded-full text-xs tracking-wide shadow-md">Empezar Prueba Gratis</button>
+            </>
           )}
         </div>
       </header>
@@ -223,7 +241,7 @@ export default function App() {
             <div className="flex justify-between items-center border-b border-slate-900 pb-4">
               <div>
                 <h2 className="text-2xl font-black text-white flex items-center gap-2"><RadioTower className="w-6 h-6 text-purple-400" /> Consola del Locutor Pro</h2>
-                <p className="text-xs text-slate-400">Plan Suscrito: <span className="text-pink-400 font-bold">{selectedPlan?.nombre || 'Básico'}</span> (15 días de prueba activos)</p>
+                <p className="text-xs text-slate-400">Plan Activo: <span className="text-pink-400 font-bold">{selectedPlan?.nombre || 'Básico'}</span> (Modo Prueba de 15 Días)</p>
               </div>
             </div>
 
@@ -329,38 +347,56 @@ export default function App() {
         </div>
       </div>
 
-      {/* MODAL DE AUTENTICACIÓN / PAGO (CHECKOUT DE TARJETA EXIGIDO) */}
+      {/* MODAL DE AUTENTICACIÓN / PAGO (CORREGIDO) */}
       {showAuthModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-[#090714] border border-purple-950/40 rounded-2xl p-6 relative space-y-6">
             <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white">✕</button>
             
             <div className="text-center space-y-1">
-              <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-0.5 rounded-full font-bold uppercase">Plan Seleccionado: {selectedPlan?.nombre}</span>
-              <h3 className="text-xl font-bold text-white">Comienza tus 15 días gratis</h3>
-              <p className="text-xs text-slate-400">No se realizará ningún cargo hoy. Cancela cuando quieras desde tu panel.</p>
+              <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-0.5 rounded-full font-bold uppercase">
+                {isRegistering ? `Plan Seleccionado: ${selectedPlan?.nombre || 'Básico'}` : 'Acceso Locutores'}
+              </span>
+              <h3 className="text-xl font-bold text-white">
+                {isRegistering ? 'Comienza tus 15 días gratis' : 'Ingresa a tu Consola'}
+              </h3>
+              <p className="text-xs text-slate-400">
+                {isRegistering ? 'No se realizará ningún cargo hoy. Cancela cuando quieras.' : 'Introduce tus credenciales de emisión.'}
+              </p>
             </div>
 
-            <form onSubmit={procesarPagoTarjeta} className="space-y-4">
-              <div className="space-y-2">
-                <input type="email" required placeholder="Correo electrónico de tu cuenta" value={email} onChange={(e) => setUser({ email: e.target.value })} className="w-full bg-[#0d0a1c] border border-slate-900 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none" />
-              </div>
-
-              <div className="bg-[#0e0b20] border border-purple-900/20 p-4 rounded-xl space-y-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-pink-500" /> Detalles de la Tarjeta</span>
-                
-                <input type="text" required placeholder="0000 0000 0000 0000" maxLength="16" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} className="w-full bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-pink-500 font-mono" />
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <input type="text" required placeholder="MM/AA" maxLength="5" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} className="bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-pink-500 font-mono text-center" />
-                  <input type="password" required placeholder="CVC" maxLength="3" value={cardCvc} onChange={(e) => setCardCvc(e.target.value)} className="bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-pink-500 font-mono text-center" />
+            {isRegistering ? (
+              /* MODO REGISTRO: PIDE CORREO + TARJETA DE VALIDACIÓN */
+              <form onSubmit={procesarPagoTarjeta} className="space-y-4">
+                <div className="space-y-2">
+                  <input type="email" required placeholder="Tu correo electrónico" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-[#0d0a1c] border border-slate-900 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none" />
                 </div>
-              </div>
 
-              <button type="submit" className="w-full bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-1.5">
-                <ShieldCheck className="w-4 h-4" /> Validar Tarjeta e Iniciar Prueba
-              </button>
-            </form>
+                <div className="bg-[#0e0b20] border border-purple-900/20 p-4 rounded-xl space-y-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-pink-500" /> Validación de Tarjeta</span>
+                  
+                  <input type="text" required placeholder="0000 0000 0000 0000" maxLength="16" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} className="w-full bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-pink-500 font-mono" />
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <input type="text" required placeholder="MM/AA" maxLength="5" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} className="bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-pink-500 font-mono text-center" />
+                    <input type="password" required placeholder="CVC" maxLength="3" value={cardCvc} onChange={(e) => setCardCvc(e.target.value)} className="bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-pink-500 font-mono text-center" />
+                  </div>
+                </div>
+
+                <button type="submit" className="w-full bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4" /> Validar Cuenta y Activar Prueba
+                </button>
+              </form>
+            ) : (
+              /* MODO LOGIN DIRECTO: SOLO CORREO */
+              <form onSubmit={ejecutarLoginDirecto} className="space-y-4">
+                <input type="email" required placeholder="Tu correo electrónico registrado" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-[#0d0a1c] border border-slate-900 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none" />
+                <input type="password" placeholder="Contraseña" className="w-full bg-[#0d0a1c] border border-slate-900 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none" />
+                <button type="submit" className="w-full bg-purple-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider hover:bg-purple-700 transition">
+                  Entrar al Panel
+                </button>
+              </form>
+            )}
           </div>
         </div>
       )}
