@@ -3,14 +3,15 @@ import { supabase } from './supabaseClient';
 import { 
   Radio, Sliders, RadioTower, Disc, Users, Globe, Music2, 
   CreditCard, ShieldCheck, Check, LogIn, DollarSign, BarChart3, 
-  Mic, LayoutDashboard, Play, Pause, Trash2, Upload, Calendar, Rss
+  Mic, LayoutDashboard, Play, Pause, Trash2, Upload, Calendar, Rss,
+  Headphones, Server, Shield, Zap, Flame, Award, Heart, UserPlus
 } from 'lucide-react';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('home'); 
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Sub-pestaña activa dentro del Panel del Locutor
+  // Sub-pestaña activa dentro del Panel del Locutor (Zeno Tools Style)
   const [activeDashboardSection, setActiveDashboardSection] = useState('live');
 
   // Estados de Autenticación y Planes
@@ -50,6 +51,14 @@ export default function App() {
   ]);
   const [nuevaPistaNombre, setNuevaPistaNombre] = useState('');
 
+  // Estaciones públicas sugeridas en el Home
+  const estacionesFijas = [
+    { id: 101, title: 'Groove Salad', genre: 'Ambient / Lounge', streamUrl: 'https://ice1.somafm.com/groovesalad-128-mp3', img: 'https://somafm.com/img3/groovesalad-400.jpg', oyentes: '1,240' },
+    { id: 102, title: 'Drone Zone', genre: 'Atmospheric Ambient', streamUrl: 'https://ice1.somafm.com/dronezone-128-mp3', img: 'https://somafm.com/img/dronezone120.jpg', oyentes: '890' },
+    { id: 103, title: 'Indie Pop Rocks!', genre: 'Independent Pop', streamUrl: 'https://ice1.somafm.com/indiepop-128-mp3', img: 'https://somafm.com/img/indiepop120.jpg', oyentes: '2,110' },
+    { id: 104, title: 'Secret Agent', genre: 'Soundtracks / Lounge', streamUrl: 'https://ice1.somafm.com/secretagent-128-mp3', img: 'https://somafm.com/img/secretagent120.jpg', oyentes: '450' }
+  ];
+
   // Datos fijos de planes
   const tablaPlanes = [
     { nombre: 'Básico', precio: '6.50', original: '12.00', estaciones: '1 estación', oyentes: 'Hasta 1,000', limitePistas: 100, color: 'border-slate-800 bg-slate-900/40 hover:border-purple-500/30', soloPrueba: true },
@@ -65,6 +74,11 @@ export default function App() {
       else { audioRef.current.pause(); }
     }
   }, [isPlaying, currentStation, volume, isMuted]);
+
+  const cambiarEstacionGlobal = (estacion) => {
+    setCurrentStation(estacion);
+    setIsPlaying(true);
+  };
 
   const handleCrearEstacion = (e) => {
     e.preventDefault();
@@ -82,8 +96,8 @@ export default function App() {
     setAutoDJPistas([...autoDJPistas, {
       id: Date.now(),
       title: nuevaPistaNombre,
-      artist: 'Unknown',
-      album: 'Nube Storage',
+      artist: 'Artista Cloud',
+      album: 'Nube Repositorio',
       duration: '03:45',
       size: '5.1 MB'
     }]);
@@ -95,11 +109,11 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#06040c] text-slate-100 font-sans antialiased pb-32">
+    <div className="min-h-screen bg-[#05030a] text-slate-100 font-sans antialiased pb-32">
       <audio ref={audioRef} src={currentStation.streamUrl} />
 
-      {/* HEADER GLOBAL */}
-      <header className="sticky top-0 z-40 bg-[#06040c]/90 backdrop-blur-md border-b border-purple-950/20 px-6 py-4 flex items-center justify-between">
+      {/* HEADER GLOBAL CON LOS TRES BOTONES SOLICITADOS */}
+      <header className="sticky top-0 z-40 bg-[#05030a]/90 backdrop-blur-md border-b border-purple-950/20 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <div onClick={() => setCurrentTab('home')} className="flex items-center gap-3 cursor-pointer">
             <div className="bg-gradient-to-r from-fuchsia-500 via-purple-600 to-pink-500 p-2.5 rounded-xl shadow-lg">
@@ -115,14 +129,31 @@ export default function App() {
             )}
           </nav>
         </div>
-        <div className="flex items-center gap-3">
+
+        {/* ACCIONES DEL HEADER: LOS TRES BOTONES ESTÁN AQUÍ */}
+        <div className="flex items-center gap-4">
           {user ? (
             <div className="flex items-center gap-3">
               <span className="text-xs bg-purple-950/40 border border-purple-500/20 px-4 py-2 rounded-full text-purple-300 font-medium">{user.email}</span>
               <button onClick={() => { setUser(null); setHasPaymentMethod(false); setMiEstacionPropia(null); setCurrentTab('home'); }} className="text-xs text-slate-400 hover:text-white px-2">Salir</button>
             </div>
           ) : (
-            <button onClick={() => { setIsRegistering(true); setSelectedPlan(tablaPlanes[0]); setShowAuthModal(true); }} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black px-5 py-2 rounded-full text-xs tracking-wide shadow-md">Empezar Prueba Gratis</button>
+            <>
+              {/* Botón 1: Iniciar Sesión */}
+              <button onClick={() => { setIsRegistering(false); setShowAuthModal(true); }} className="text-xs font-bold text-slate-300 hover:text-white transition px-3 py-2 flex items-center gap-1.5">
+                <LogIn className="w-3.5 h-3.5 text-purple-400" /> Iniciar Sesión
+              </button>
+
+              {/* Botón 2: Registrarse Standard */}
+              <button onClick={() => { setIsRegistering(true); setSelectedPlan(tablaPlanes[1]); setShowAuthModal(true); }} className="text-xs font-bold bg-slate-900 border border-slate-800 text-slate-200 px-4 py-2 rounded-xl hover:border-purple-500/40 transition flex items-center gap-1.5">
+                <UserPlus className="w-3.5 h-3.5 text-pink-400" /> Registrarse
+              </button>
+
+              {/* Botón 3: Empezar Prueba Gratis */}
+              <button onClick={() => { setIsRegistering(true); setSelectedPlan(tablaPlanes[0]); setShowAuthModal(true); }} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black px-5 py-2.5 rounded-full text-xs tracking-wide shadow-md hover:opacity-90 transition">
+                Empezar Prueba Gratis
+              </button>
+            </>
           )}
         </div>
       </header>
@@ -130,17 +161,90 @@ export default function App() {
       {/* CUERPO PRINCIPAL */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         
-        {/* VISTA: HOME */}
+        {/* VISTA: HOME RESTAURADA COMPLETA (¡EL "WOW" REGRESÓ!) */}
         {currentTab === 'home' && (
-          <div className="space-y-12">
-            <section className="bg-gradient-to-br from-purple-950/20 via-slate-950 to-slate-950 rounded-3xl border border-purple-500/5 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="space-y-16">
+            
+            {/* HERO PRINCIPAL */}
+            <section className="bg-gradient-to-br from-purple-950/30 via-slate-950 to-slate-950 rounded-3xl border border-purple-500/10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
               <div className="max-w-xl space-y-6">
                 <span className="bg-pink-500/10 text-pink-400 text-xs font-bold px-3 py-1 rounded-full border border-pink-500/20 tracking-wider">PROBÁLO GRATIS POR 15 DÍAS</span>
-                <h2 className="text-4xl md:text-5xl font-black text-white leading-none">Crea tu radio online con <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">AutoDJ Avanzado</span></h2>
-                <p className="text-slate-400 text-sm leading-relaxed">Administra transmisiones en vivo, listas de reproducción inteligentes automatizadas y monetización directa desde un único panel lateral optimizado.</p>
-                <button onClick={() => setCurrentTab('pricing')} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black px-6 py-3 rounded-full text-sm shadow-xl">Ver Planes de Streaming</button>
+                <h2 className="text-4xl md:text-6xl font-black text-white leading-none tracking-tight">Crea tu radio online con <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">AutoDJ Avanzado</span></h2>
+                <p className="text-slate-400 text-sm md:text-base leading-relaxed">Administra transmisiones en vivo, listas de reproducción inteligentes automatizadas y monetización directa desde un único panel lateral optimizado de nivel industrial.</p>
+                <div className="flex flex-wrap gap-4 pt-2">
+                  <button onClick={() => setCurrentTab('pricing')} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black px-6 py-3 rounded-full text-sm shadow-xl hover:scale-105 transition duration-200">Ver Planes de Streaming</button>
+                  <button onClick={() => { setIsRegistering(true); setSelectedPlan(tablaPlanes[0]); setShowAuthModal(true); }} className="bg-slate-900 border border-slate-800 text-white font-bold px-6 py-3 rounded-full text-sm hover:border-purple-500/40 transition">Prueba Gratis de 15 Días</button>
+                </div>
+              </div>
+              <div className="relative w-full md:w-1/2 max-w-sm flex justify-center">
+                <div className="absolute -inset-4 bg-purple-500/10 rounded-full blur-3xl"></div>
+                <div className="bg-slate-900/60 p-8 rounded-2xl border border-purple-500/10 backdrop-blur-xl relative w-full text-center space-y-4">
+                  <RadioTower className="w-12 h-12 text-pink-500 mx-auto animate-pulse" />
+                  <div className="space-y-1">
+                    <div className="text-white font-black text-lg">Servidores Redundantes</div>
+                    <div className="text-xs text-slate-400">99.9% Uptime garantizado por Icecast KH & AutoDJ Inteligente</div>
+                  </div>
+                </div>
               </div>
             </section>
+
+            {/* SECCIÓN MÁXIMA DE CARACTERÍSTICAS (Información que faltaba) */}
+            <section className="space-y-6">
+              <div className="text-center space-y-2">
+                <h3 className="text-2xl font-black text-white">Infraestructura Tecnológica Diseñada para Emisores</h3>
+                <p className="text-sm text-slate-400 max-w-xl mx-auto">Todo lo que necesitas para competir con las grandes cadenas globales de radiodifusión.</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-3">
+                  <div className="bg-purple-500/10 w-10 h-10 rounded-xl flex items-center justify-center border border-purple-500/20"><Zap className="w-5 h-5 text-purple-400" /></div>
+                  <h4 className="font-bold text-white text-sm">Transmisión Inmediata</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">Conéctate usando OBS, Butt o Mixxx. Latencia ultra-baja en todo el continente.</p>
+                </div>
+                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-3">
+                  <div className="bg-pink-500/10 w-10 h-10 rounded-xl flex items-center justify-center border border-pink-500/20"><Disc className="w-5 h-5 text-pink-400" /></div>
+                  <h4 className="font-bold text-white text-sm">AutoDJ en la Nube</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">Sube tus archivos MP3 directamente y deja que el sistema mezcle por ti cuando apagues tu PC.</p>
+                </div>
+                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-3">
+                  <div className="bg-cyan-500/10 w-10 h-10 rounded-xl flex items-center justify-center border border-cyan-500/20"><BarChart3 className="w-5 h-5 text-cyan-400" /></div>
+                  <h4 className="font-bold text-white text-sm">Métricas de Oyentes</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">Mapas en tiempo real. Conoce exactamente cuántas personas te escuchan y en qué país.</p>
+                </div>
+                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-3">
+                  <div className="bg-emerald-500/10 w-10 h-10 rounded-xl flex items-center justify-center border border-emerald-500/20"><DollarSign className="w-5 h-5 text-emerald-400" /></div>
+                  <h4 className="font-bold text-white text-sm">Inyección de Audio Ads</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">Monetiza cada corte comercial de tu transmisión con anuncios automáticos premium.</p>
+                </div>
+              </div>
+            </section>
+
+            {/* EXPLORADOR DE EMISORAS PÚBLICAS REPRODUCTORAS (¡Estilo Plataforma!) */}
+            <section className="space-y-4">
+              <div className="flex justify-between items-end">
+                <div>
+                  <h3 className="text-xl font-black text-white flex items-center gap-2"><Headphones className="w-5 h-5 text-pink-400" /> Estaciones Activas en la Red</h3>
+                  <p className="text-xs text-slate-400">Prueba la calidad de compresión de audio y velocidad de búfer en vivo.</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {estacionesFijas.map((est) => (
+                  <div key={est.id} className="bg-slate-900/40 border border-slate-900 p-4 rounded-2xl flex items-center justify-between group hover:border-purple-500/20 transition-all duration-200">
+                    <div className="flex items-center gap-3">
+                      <img src={est.img} alt="" className="w-12 h-12 rounded-xl object-cover shadow-md" />
+                      <div>
+                        <h4 className="font-bold text-xs text-white truncate max-w-[120px]">{est.title}</h4>
+                        <p className="text-[10px] text-slate-400 truncate max-w-[120px]">{est.genre}</p>
+                        <span className="text-[9px] font-mono text-purple-400 flex items-center gap-1 mt-1"><Users className="w-2.5 h-2.5" /> {est.oyentes} listeners</span>
+                      </div>
+                    </div>
+                    <button onClick={() => cambiarEstacionGlobal(est)} className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-200 group-hover:bg-white group-hover:text-slate-950 transition-all">
+                      {currentStation.id === est.id && isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+
           </div>
         )}
 
@@ -179,7 +283,6 @@ export default function App() {
         {currentTab === 'dashboard' && user && hasPaymentMethod && (
           <div className="space-y-6">
             
-            {/* Encabezado del Dashboard */}
             <div className="border-b border-slate-900 pb-4 flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-black text-white flex items-center gap-2"><LayoutDashboard className="w-5 h-5 text-purple-400" /> Consola de Control Zeno Tools</h2>
@@ -226,10 +329,9 @@ export default function App() {
                   </button>
                 </aside>
 
-                {/* CONTENIDO DE LA SECCIÓN ACTIVA (Se desplaza dinámicamente) */}
+                {/* CONTENIDO DE LA SECCIÓN ACTIVA */}
                 <div className="flex-1 w-full bg-[#070512] border border-slate-900 rounded-2xl p-6 min-h-[460px]">
                   
-                  {/* SECCIÓN SIDEBAR: TRANSMISIÓN EN VIVO */}
                   {activeDashboardSection === 'live' && (
                     <div className="space-y-6">
                       <div className="flex justify-between items-center">
@@ -255,7 +357,6 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* SECCIÓN SIDEBAR: AUTO-DJ (Maqueta idéntica a la tabla de Zeno Tools) */}
                   {activeDashboardSection === 'autodj' && (
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
@@ -266,13 +367,11 @@ export default function App() {
                         <span className="text-xs text-purple-400 bg-purple-950/30 px-3 py-1.5 rounded-xl border border-purple-500/20 font-medium">Límite del Plan: {autoDJPistas.length} / {selectedPlan?.limitePistas || 100}</span>
                       </div>
 
-                      {/* Botón de Carga al Estilo Zeno */}
                       <form onSubmit={handleSubirPista} className="flex gap-2 bg-[#0c091c] p-3 rounded-xl border border-slate-900">
                         <input type="text" required placeholder="Nombre de la pista o canción a subir" value={nuevaPistaNombre} onChange={(e) => setNuevaPistaNombre(e.target.value)} className="bg-[#120f26] border border-slate-800 rounded-lg px-3 py-2 text-xs text-white flex-1 focus:outline-none" />
                         <button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5"><Upload className="w-3.5 h-3.5" /> Upload</button>
                       </form>
 
-                      {/* Tabla del Repositorio de Pistas */}
                       <div className="border border-slate-900 rounded-xl overflow-hidden text-xs">
                         <div className="grid grid-cols-12 bg-[#0c091c] p-3 border-b border-slate-900 text-slate-400 font-bold">
                           <div className="col-span-5">Título de la pista</div>
@@ -298,7 +397,6 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* SECCIÓN SIDEBAR: ANALÍTICAS */}
                   {activeDashboardSection === 'analytics' && (
                     <div className="space-y-6">
                       <h3 className="text-base font-bold text-white">Estadísticas y Analíticas Geográficas</h3>
@@ -308,7 +406,6 @@ export default function App() {
                         <div className="bg-[#0c091c] border border-slate-900 p-4 rounded-xl"><span className="text-[10px] text-slate-500 uppercase font-bold">Horas Escuchadas</span><p className="text-2xl font-black text-purple-400 mt-1">1.22 M</p></div>
                       </div>
 
-                      {/* Lista de Países Idéntica al Mapa de Zeno */}
                       <div className="space-y-2">
                         <h4 className="text-xs font-bold text-slate-400">Top Oyentes por Región</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
@@ -321,7 +418,6 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* SECCIÓN SIDEBAR: MONETIZACIÓN */}
                   {activeDashboardSection === 'monetization' && (
                     <div className="space-y-6">
                       <h3 className="text-base font-bold text-white">Monetización por Audio Ads</h3>
@@ -340,7 +436,6 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* SECCIÓN SIDEBAR: GRABACIÓN / PODCAST */}
                   {activeDashboardSection === 'podcast' && (
                     <div className="space-y-4">
                       <h3 className="text-base font-bold text-white">Grabación Automática de Programas</h3>
@@ -351,7 +446,6 @@ export default function App() {
                         <div className="bg-slate-950 p-3 rounded-lg border border-slate-900 font-mono text-[11px] text-slate-300 truncate select-all">
                           https://podcast.fredstreaming.com/feed/station_{miEstacionPropia.id}
                         </div>
-                        <p className="text-[11px] text-slate-500">Copia este enlace en cualquier agregador de directorios de podcast para distribuir tu señal grabada.</p>
                       </div>
                     </div>
                   )}
@@ -365,13 +459,13 @@ export default function App() {
 
       </main>
 
-      {/* MINI REPRODUCTOR INFERIOR */}
+      {/* MINI REPRODUCTOR INFERIOR GLOBAL */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0a0814]/95 border-t border-purple-500/10 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4 w-1/3">
           <img src={currentStation.img} alt="" className="w-10 h-10 rounded-lg object-cover shadow" />
           <div className="truncate"><h5 className="font-bold text-xs text-white truncate">{currentStation.title}</h5><p className="text-[11px] text-slate-400 truncate">{currentStation.genre}</p></div>
         </div>
-        <button onClick={() => setIsPlaying(!isPlaying)} className="w-10 h-10 rounded-full bg-white text-slate-950 flex items-center justify-center shadow-md">
+        <button onClick={() => setIsPlaying(!isPlaying)} className="w-10 h-10 rounded-full bg-white text-slate-950 flex items-center justify-center shadow-md hover:scale-105 transition">
           {isPlaying ? <Pause className="w-4 h-4 text-slate-950" /> : <Play className="w-4 h-4 text-slate-950 fill-slate-950" />}
         </button>
         <div className="w-1/3 flex justify-end items-center gap-2">
@@ -388,10 +482,10 @@ export default function App() {
             
             <div className="text-center space-y-1">
               <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-0.5 rounded-full font-bold uppercase">
-                {isRegistering ? `Plan: ${selectedPlan?.nombre}` : 'Acceso de Emisores'}
+                {isRegistering ? `Plan Seleccionado: ${selectedPlan?.nombre || 'Estándar'}` : 'Acceso de Emisores'}
               </span>
               <h3 className="text-xl font-bold text-white">
-                {isRegistering ? (selectedPlan?.soloPrueba ? 'Comienza tus 15 días gratis' : 'Configura tu suscripción') : 'Ingresa a tu Consola'}
+                {isRegistering ? (selectedPlan?.soloPrueba ? 'Comienza tus 15 días gratis' : 'Configura tu cuenta') : 'Ingresa a tu Consola'}
               </h3>
             </div>
 
@@ -400,7 +494,7 @@ export default function App() {
               
               {isRegistering && (
                 <div className="bg-[#0e0b20] border border-purple-900/20 p-4 rounded-xl space-y-3">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-pink-500" /> Validación de Tarjeta</span>
+                  <span className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-pink-500" /> Validación de Tarjeta de Respaldo</span>
                   <input type="text" required placeholder="0000 0000 0000 0000" maxLength="16" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} className="w-full bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white focus:outline-none font-mono" />
                   <div className="grid grid-cols-2 gap-3">
                     <input type="text" required placeholder="MM/AA" maxLength="5" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} className="bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white font-mono text-center" />
@@ -410,7 +504,7 @@ export default function App() {
               )}
 
               <button type="submit" className="w-full bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black py-3 rounded-xl text-xs uppercase shadow-lg flex items-center justify-center gap-1.5">
-                <ShieldCheck className="w-4 h-4" /> {isRegistering ? (selectedPlan?.soloPrueba ? 'Activar Prueba Gratuita' : 'Confirmar Registro') : 'Entrar al Panel'}
+                <ShieldCheck className="w-4 h-4" /> {isRegistering ? (selectedPlan?.soloPrueba ? 'Activar 15 Días Gratis' : 'Completar Registro') : 'Entrar al Panel'}
               </button>
             </form>
           </div>
