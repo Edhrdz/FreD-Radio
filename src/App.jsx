@@ -4,12 +4,16 @@ import {
   Radio, Sliders, RadioTower, Disc, Users, Globe, Music2, 
   CreditCard, ShieldCheck, Check, LogIn, DollarSign, BarChart3, 
   Mic, LayoutDashboard, Play, Pause, Trash2, Upload, Calendar, Rss,
-  Headphones, Server, Shield, Zap, Flame, Award, Heart, UserPlus
+  Headphones, Server, Shield, Zap, Flame, Award, Heart, UserPlus,
+  Compass, Library, Search
 } from 'lucide-react';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('home'); 
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Sub-pestaña del Home (Descubrir, Biblioteca, Buscar)
+  const [homeSubTab, setHomeSubTab] = useState('descubrir');
 
   // Sub-pestaña activa dentro del Panel del Locutor (Zeno Tools Style)
   const [activeDashboardSection, setActiveDashboardSection] = useState('live');
@@ -59,7 +63,6 @@ export default function App() {
     { id: 104, title: 'Secret Agent', genre: 'Soundtracks / Lounge', streamUrl: 'https://ice1.somafm.com/secretagent-128-mp3', img: 'https://somafm.com/img/secretagent120.jpg', oyentes: '450' }
   ];
 
-  // Datos fijos de planes
   const tablaPlanes = [
     { nombre: 'Básico', precio: '6.50', original: '12.00', estaciones: '1 estación', oyentes: 'Hasta 1,000', limitePistas: 100, color: 'border-slate-800 bg-slate-900/40 hover:border-purple-500/30', soloPrueba: true },
     { nombre: 'Estándar', precio: '14.00', original: '28.00', estaciones: '1 estación', oyentes: 'Hasta 5,000', limitePistas: 500, color: 'border-slate-800 bg-slate-900/40 hover:border-purple-500/30', soloPrueba: false },
@@ -108,11 +111,17 @@ export default function App() {
     setAutoDJPistas(autoDJPistas.filter(p => p.id !== id));
   };
 
+  // Filtrado de emisoras para la barra de búsqueda
+  const estacionesFiltradas = estacionesFijas.filter(est => 
+    est.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    est.genre.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-[#05030a] text-slate-100 font-sans antialiased pb-32">
       <audio ref={audioRef} src={currentStation.streamUrl} />
 
-      {/* HEADER GLOBAL CON LOS TRES BOTONES SOLICITADOS */}
+      {/* HEADER GLOBAL */}
       <header className="sticky top-0 z-40 bg-[#05030a]/90 backdrop-blur-md border-b border-purple-950/20 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <div onClick={() => setCurrentTab('home')} className="flex items-center gap-3 cursor-pointer">
@@ -121,8 +130,10 @@ export default function App() {
             </div>
             <span className="text-2xl font-black tracking-tight text-white">FreD</span>
           </div>
+
+          {/* Menú Superior con sub-barra de navegación integrada */}
           <nav className="hidden md:flex items-center gap-2 text-sm font-medium text-slate-400">
-            <button onClick={() => setCurrentTab('home')} className={`px-4 py-2 rounded-xl transition ${currentTab === 'home' ? 'text-white bg-slate-900/40' : 'hover:text-white'}`}>Home</button>
+            <button onClick={() => { setCurrentTab('home'); setHomeSubTab('descubrir'); }} className={`px-4 py-2 rounded-xl transition ${currentTab === 'home' ? 'text-white bg-slate-900/40' : 'hover:text-white'}`}>Home</button>
             <button onClick={() => setCurrentTab('pricing')} className={`px-4 py-2 rounded-xl transition ${currentTab === 'pricing' ? 'text-white bg-slate-900/40' : 'hover:text-white'}`}>Planes y Precios</button>
             {user && hasPaymentMethod && (
               <button onClick={() => setCurrentTab('dashboard')} className={`px-4 py-2 rounded-xl border border-purple-500/30 text-purple-400 flex items-center gap-1.5 ${currentTab === 'dashboard' ? 'bg-purple-950/30 text-white' : ''}`}><Sliders className="w-3.5 h-3.5" /> Panel Locutor</button>
@@ -130,7 +141,7 @@ export default function App() {
           </nav>
         </div>
 
-        {/* ACCIONES DEL HEADER: LOS TRES BOTONES ESTÁN AQUÍ */}
+        {/* ACCIONES DEL HEADER */}
         <div className="flex items-center gap-4">
           {user ? (
             <div className="flex items-center gap-3">
@@ -139,17 +150,12 @@ export default function App() {
             </div>
           ) : (
             <>
-              {/* Botón 1: Iniciar Sesión */}
               <button onClick={() => { setIsRegistering(false); setShowAuthModal(true); }} className="text-xs font-bold text-slate-300 hover:text-white transition px-3 py-2 flex items-center gap-1.5">
                 <LogIn className="w-3.5 h-3.5 text-purple-400" /> Iniciar Sesión
               </button>
-
-              {/* Botón 2: Registrarse Standard */}
               <button onClick={() => { setIsRegistering(true); setSelectedPlan(tablaPlanes[1]); setShowAuthModal(true); }} className="text-xs font-bold bg-slate-900 border border-slate-800 text-slate-200 px-4 py-2 rounded-xl hover:border-purple-500/40 transition flex items-center gap-1.5">
                 <UserPlus className="w-3.5 h-3.5 text-pink-400" /> Registrarse
               </button>
-
-              {/* Botón 3: Empezar Prueba Gratis */}
               <button onClick={() => { setIsRegistering(true); setSelectedPlan(tablaPlanes[0]); setShowAuthModal(true); }} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black px-5 py-2.5 rounded-full text-xs tracking-wide shadow-md hover:opacity-90 transition">
                 Empezar Prueba Gratis
               </button>
@@ -161,89 +167,130 @@ export default function App() {
       {/* CUERPO PRINCIPAL */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         
-        {/* VISTA: HOME RESTAURADA COMPLETA (¡EL "WOW" REGRESÓ!) */}
+        {/* VISTA: HOME */}
         {currentTab === 'home' && (
-          <div className="space-y-16">
+          <div className="space-y-12">
             
             {/* HERO PRINCIPAL */}
             <section className="bg-gradient-to-br from-purple-950/30 via-slate-950 to-slate-950 rounded-3xl border border-purple-500/10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
               <div className="max-w-xl space-y-6">
                 <span className="bg-pink-500/10 text-pink-400 text-xs font-bold px-3 py-1 rounded-full border border-pink-500/20 tracking-wider">PROBÁLO GRATIS POR 15 DÍAS</span>
                 <h2 className="text-4xl md:text-6xl font-black text-white leading-none tracking-tight">Crea tu radio online con <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">AutoDJ Avanzado</span></h2>
-                <p className="text-slate-400 text-sm md:text-base leading-relaxed">Administra transmisiones en vivo, listas de reproducción inteligentes automatizadas y monetización directa desde un único panel lateral optimizado de nivel industrial.</p>
+                <p className="text-slate-400 text-sm leading-relaxed">Administra transmisiones en vivo, listas de reproducción inteligentes automatizadas y monetización directa desde un único panel lateral optimizado.</p>
                 <div className="flex flex-wrap gap-4 pt-2">
                   <button onClick={() => setCurrentTab('pricing')} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black px-6 py-3 rounded-full text-sm shadow-xl hover:scale-105 transition duration-200">Ver Planes de Streaming</button>
-                  <button onClick={() => { setIsRegistering(true); setSelectedPlan(tablaPlanes[0]); setShowAuthModal(true); }} className="bg-slate-900 border border-slate-800 text-white font-bold px-6 py-3 rounded-full text-sm hover:border-purple-500/40 transition">Prueba Gratis de 15 Días</button>
                 </div>
               </div>
               <div className="relative w-full md:w-1/2 max-w-sm flex justify-center">
                 <div className="absolute -inset-4 bg-purple-500/10 rounded-full blur-3xl"></div>
                 <div className="bg-slate-900/60 p-8 rounded-2xl border border-purple-500/10 backdrop-blur-xl relative w-full text-center space-y-4">
                   <RadioTower className="w-12 h-12 text-pink-500 mx-auto animate-pulse" />
-                  <div className="space-y-1">
-                    <div className="text-white font-black text-lg">Servidores Redundantes</div>
-                    <div className="text-xs text-slate-400">99.9% Uptime garantizado por Icecast KH & AutoDJ Inteligente</div>
+                  <div className="text-white font-black text-base">Red Icecast KH Activa</div>
+                </div>
+              </div>
+            </section>
+
+            {/* BARRA DE NAVEGACIÓN EN HOME (¡RESTAURADA IDENTICA A TU CAPTURA!) */}
+            <div className="flex items-center gap-2 bg-[#0d0a1c]/60 p-1.5 rounded-2xl border border-slate-900 w-fit">
+              <button 
+                onClick={() => setHomeSubTab('descubrir')} 
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${homeSubTab === 'descubrir' ? 'bg-[#181334] text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                <Compass className="w-4 h-4 text-purple-400" /> Descubrir
+              </button>
+              <button 
+                onClick={() => setHomeSubTab('biblioteca')} 
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${homeSubTab === 'biblioteca' ? 'bg-[#181334] text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                <Library className="w-4 h-4 text-pink-400" /> Biblioteca
+              </button>
+              <button 
+                onClick={() => setHomeSubTab('buscar')} 
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${homeSubTab === 'buscar' ? 'bg-[#181334] text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                <Search className="w-4 h-4 text-cyan-400" /> Buscar
+              </button>
+            </div>
+
+            {/* SECCIÓN INTERNA BASADA EN EL BOTÓN SELECCIONADO EN EL HOME */}
+            <div className="bg-[#070512] border border-slate-900 rounded-2xl p-6 min-h-[250px]">
+              
+              {/* SUB-TAB: DESCUBRIR */}
+              {homeSubTab === 'descubrir' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-black text-white">Emisoras Destacadas</h3>
+                    <p className="text-xs text-slate-400">Escucha los servidores con mayor flujo de oyentes en tiempo real.</p>
                   </div>
-                </div>
-              </div>
-            </section>
-
-            {/* SECCIÓN MÁXIMA DE CARACTERÍSTICAS (Información que faltaba) */}
-            <section className="space-y-6">
-              <div className="text-center space-y-2">
-                <h3 className="text-2xl font-black text-white">Infraestructura Tecnológica Diseñada para Emisores</h3>
-                <p className="text-sm text-slate-400 max-w-xl mx-auto">Todo lo que necesitas para competir con las grandes cadenas globales de radiodifusión.</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-3">
-                  <div className="bg-purple-500/10 w-10 h-10 rounded-xl flex items-center justify-center border border-purple-500/20"><Zap className="w-5 h-5 text-purple-400" /></div>
-                  <h4 className="font-bold text-white text-sm">Transmisión Inmediata</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">Conéctate usando OBS, Butt o Mixxx. Latencia ultra-baja en todo el continente.</p>
-                </div>
-                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-3">
-                  <div className="bg-pink-500/10 w-10 h-10 rounded-xl flex items-center justify-center border border-pink-500/20"><Disc className="w-5 h-5 text-pink-400" /></div>
-                  <h4 className="font-bold text-white text-sm">AutoDJ en la Nube</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">Sube tus archivos MP3 directamente y deja que el sistema mezcle por ti cuando apagues tu PC.</p>
-                </div>
-                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-3">
-                  <div className="bg-cyan-500/10 w-10 h-10 rounded-xl flex items-center justify-center border border-cyan-500/20"><BarChart3 className="w-5 h-5 text-cyan-400" /></div>
-                  <h4 className="font-bold text-white text-sm">Métricas de Oyentes</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">Mapas en tiempo real. Conoce exactamente cuántas personas te escuchan y en qué país.</p>
-                </div>
-                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-3">
-                  <div className="bg-emerald-500/10 w-10 h-10 rounded-xl flex items-center justify-center border border-emerald-500/20"><DollarSign className="w-5 h-5 text-emerald-400" /></div>
-                  <h4 className="font-bold text-white text-sm">Inyección de Audio Ads</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">Monetiza cada corte comercial de tu transmisión con anuncios automáticos premium.</p>
-                </div>
-              </div>
-            </section>
-
-            {/* EXPLORADOR DE EMISORAS PÚBLICAS REPRODUCTORAS (¡Estilo Plataforma!) */}
-            <section className="space-y-4">
-              <div className="flex justify-between items-end">
-                <div>
-                  <h3 className="text-xl font-black text-white flex items-center gap-2"><Headphones className="w-5 h-5 text-pink-400" /> Estaciones Activas en la Red</h3>
-                  <p className="text-xs text-slate-400">Prueba la calidad de compresión de audio y velocidad de búfer en vivo.</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {estacionesFijas.map((est) => (
-                  <div key={est.id} className="bg-slate-900/40 border border-slate-900 p-4 rounded-2xl flex items-center justify-between group hover:border-purple-500/20 transition-all duration-200">
-                    <div className="flex items-center gap-3">
-                      <img src={est.img} alt="" className="w-12 h-12 rounded-xl object-cover shadow-md" />
-                      <div>
-                        <h4 className="font-bold text-xs text-white truncate max-w-[120px]">{est.title}</h4>
-                        <p className="text-[10px] text-slate-400 truncate max-w-[120px]">{est.genre}</p>
-                        <span className="text-[9px] font-mono text-purple-400 flex items-center gap-1 mt-1"><Users className="w-2.5 h-2.5" /> {est.oyentes} listeners</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {estacionesFijas.map((est) => (
+                      <div key={est.id} className="bg-slate-900/40 border border-slate-900 p-4 rounded-2xl flex items-center justify-between group hover:border-purple-500/20 transition">
+                        <div className="flex items-center gap-3">
+                          <img src={est.img} alt="" className="w-11 h-11 rounded-xl object-cover" />
+                          <div>
+                            <h4 className="font-bold text-xs text-white truncate max-w-[120px]">{est.title}</h4>
+                            <p className="text-[10px] text-slate-400 truncate">{est.genre}</p>
+                            <span className="text-[9px] font-mono text-purple-400 flex items-center gap-1 mt-0.5"><Users className="w-2.5 h-2.5" /> {est.oyentes}</span>
+                          </div>
+                        </div>
+                        <button onClick={() => cambiarEstacionGlobal(est)} className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-200 group-hover:bg-white group-hover:text-slate-950 transition">
+                          {currentStation.id === est.id && isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
+                        </button>
                       </div>
-                    </div>
-                    <button onClick={() => cambiarEstacionGlobal(est)} className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-200 group-hover:bg-white group-hover:text-slate-950 transition-all">
-                      {currentStation.id === est.id && isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
-                    </button>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </section>
+                </div>
+              )}
+
+              {/* SUB-TAB: BIBLIOTECA */}
+              {homeSubTab === 'biblioteca' && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-black text-white">Tu Historial de Escucha</h3>
+                  <p className="text-xs text-slate-400">Aquí se guardarán las estaciones que has sintonizado recientemente en la plataforma.</p>
+                  <div className="bg-slate-900/20 border border-dashed border-slate-800 rounded-xl p-8 text-center text-xs text-slate-500">
+                    Sintoniza emisoras públicas en la pestaña "Descubrir" para crear tu historial.
+                  </div>
+                </div>
+              )}
+
+              {/* SUB-TAB: BUSCAR */}
+              {homeSubTab === 'buscar' && (
+                <div className="space-y-6">
+                  <div className="max-w-md relative">
+                    <Search className="w-4 h-4 text-slate-500 absolute left-4 top-3.5" />
+                    <input 
+                      type="text" 
+                      placeholder="Buscar por nombre de radio o género..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full bg-[#0c091c] border border-slate-800 rounded-xl py-3 pl-11 pr-4 text-xs text-white focus:outline-none focus:border-purple-500/50"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {estacionesFiltradas.length > 0 ? (
+                      estacionesFiltradas.map((est) => (
+                        <div key={est.id} className="bg-slate-900/40 border border-slate-900 p-4 rounded-2xl flex items-center justify-between group hover:border-purple-500/20 transition">
+                          <div className="flex items-center gap-3">
+                            <img src={est.img} alt="" className="w-11 h-11 rounded-xl object-cover" />
+                            <div>
+                              <h4 className="font-bold text-xs text-white truncate max-w-[120px]">{est.title}</h4>
+                              <p className="text-[10px] text-slate-400 truncate">{est.genre}</p>
+                            </div>
+                          </div>
+                          <button onClick={() => cambiarEstacionGlobal(est)} className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-200 group-hover:bg-white group-hover:text-slate-950 transition">
+                            <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-slate-500 col-span-4">No se encontraron estaciones que coincidan con tu búsqueda.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+            </div>
 
           </div>
         )}
@@ -282,12 +329,9 @@ export default function App() {
         {/* VISTA: PANEL DE LOCUTOR COMPLETO CON MENÚ LATERAL IZQUIERDO */}
         {currentTab === 'dashboard' && user && hasPaymentMethod && (
           <div className="space-y-6">
-            
-            <div className="border-b border-slate-900 pb-4 flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-black text-white flex items-center gap-2"><LayoutDashboard className="w-5 h-5 text-purple-400" /> Consola de Control Zeno Tools</h2>
-                <p className="text-xs text-slate-400">Gestiona tu estación, automatizaciones de AutoDJ y analíticas geográficas.</p>
-              </div>
+            <div className="border-b border-slate-900 pb-4">
+              <h2 className="text-xl font-black text-white flex items-center gap-2"><LayoutDashboard className="w-5 h-5 text-purple-400" /> Consola de Control Zeno Tools</h2>
+              <p className="text-xs text-slate-400">Gestiona tu estación, automatizaciones de AutoDJ y analíticas geográficas.</p>
             </div>
 
             {!miEstacionPropia ? (
@@ -300,59 +344,35 @@ export default function App() {
                 </form>
               </div>
             ) : (
-              
-              /* CONTENEDOR SPLIT: MENÚ LATERAL + ÁREA DE CONTENIDO */
               <div className="flex flex-col md:flex-row gap-6 items-start">
-                
-                {/* MENÚ LATERAL IZQUIERDO (SIDEBAR al estilo Zeno Tools) */}
+                {/* MENÚ LATERAL IZQUIERDO */}
                 <aside className="w-full md:w-64 bg-[#0a0716] border border-slate-900 rounded-2xl p-3 flex flex-col gap-1 shrink-0">
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 py-2">Módulos de Radio</span>
-                  
                   <button onClick={() => setActiveDashboardSection('live')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition ${activeDashboardSection === 'live' ? 'bg-purple-950/40 text-purple-400 border border-purple-500/20' : 'text-slate-400 hover:bg-slate-900/50 hover:text-white'}`}>
                     <RadioTower className="w-4 h-4" /> Transmisión en Vivo
                   </button>
-
                   <button onClick={() => setActiveDashboardSection('autodj')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition ${activeDashboardSection === 'autodj' ? 'bg-purple-950/40 text-pink-400 border border-pink-500/20' : 'text-slate-400 hover:bg-slate-900/50 hover:text-white'}`}>
                     <Disc className="w-4 h-4" /> Auto-DJ Storage
                   </button>
-
                   <button onClick={() => setActiveDashboardSection('analytics')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition ${activeDashboardSection === 'analytics' ? 'bg-purple-950/40 text-cyan-400 border border-cyan-500/20' : 'text-slate-400 hover:bg-slate-900/50 hover:text-white'}`}>
                     <BarChart3 className="w-4 h-4" /> Analíticas e Historial
                   </button>
-
                   <button onClick={() => setActiveDashboardSection('monetization')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition ${activeDashboardSection === 'monetization' ? 'bg-purple-950/40 text-emerald-400 border border-emerald-500/20' : 'text-slate-400 hover:bg-slate-900/50 hover:text-white'}`}>
                     <DollarSign className="w-4 h-4" /> Monetización Audio
                   </button>
-
-                  <button onClick={() => setActiveDashboardSection('podcast')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition ${activeDashboardSection === 'podcast' ? 'bg-purple-950/40 text-amber-400 border border-amber-500/20' : 'text-slate-400 hover:bg-slate-900/50 hover:text-white'}`}>
-                    <Mic className="w-4 h-4" /> Graba tus Podcasts
-                  </button>
                 </aside>
 
-                {/* CONTENIDO DE LA SECCIÓN ACTIVA */}
+                {/* CONTENIDO DEL DASHBOARD DE CONTROL */}
                 <div className="flex-1 w-full bg-[#070512] border border-slate-900 rounded-2xl p-6 min-h-[460px]">
-                  
                   {activeDashboardSection === 'live' && (
                     <div className="space-y-6">
                       <div className="flex justify-between items-center">
                         <h3 className="text-base font-bold text-white">Transmisión en Vivo</h3>
                         <span className="bg-emerald-500/10 text-emerald-400 text-[10px] px-2.5 py-1 rounded-full border border-emerald-500/20 font-bold">SERVIDOR ONLINE</span>
                       </div>
-                      <p className="text-xs text-slate-400">Usa estos parámetros en tu software de transmisión favorito (OBS, Butt o Mixxx) para conectarte a la antena.</p>
-                      
                       <div className="bg-[#0c091c] border border-slate-900 rounded-xl p-4 space-y-3 font-mono text-xs">
-                        <div className="flex justify-between border-b border-slate-900 pb-2">
-                          <span className="text-slate-500">Servidor / URL:</span>
-                          <span className="text-slate-300">str.fredstreaming.com:8000</span>
-                        </div>
-                        <div className="flex justify-between border-b border-slate-900 pb-2">
-                          <span className="text-slate-500">Mountpoint / Clave:</span>
-                          <span className="text-slate-300">/live_stream_{miEstacionPropia.id}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Contraseña de Emisión:</span>
-                          <span className="text-purple-400 font-bold">fred_secret_pass_2026</span>
-                        </div>
+                        <div className="flex justify-between border-b border-slate-900 pb-2"><span className="text-slate-500">Servidor / URL:</span><span className="text-slate-300">str.fredstreaming.com:8000</span></div>
+                        <div className="flex justify-between border-b border-slate-900 pb-2"><span className="text-slate-500">Mountpoint:</span><span className="text-slate-300">/live_stream_{miEstacionPropia.id}</span></div>
                       </div>
                     </div>
                   )}
@@ -360,98 +380,48 @@ export default function App() {
                   {activeDashboardSection === 'autodj' && (
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <div>
-                          <h3 className="text-base font-bold text-white">Playlist del Auto-DJ</h3>
-                          <p className="text-xs text-slate-500">Estas canciones sonarán en bucle continuo de forma automática al desconectarte.</p>
-                        </div>
+                        <h3 className="text-base font-bold text-white">Playlist del Auto-DJ</h3>
                         <span className="text-xs text-purple-400 bg-purple-950/30 px-3 py-1.5 rounded-xl border border-purple-500/20 font-medium">Límite del Plan: {autoDJPistas.length} / {selectedPlan?.limitePistas || 100}</span>
                       </div>
-
                       <form onSubmit={handleSubirPista} className="flex gap-2 bg-[#0c091c] p-3 rounded-xl border border-slate-900">
-                        <input type="text" required placeholder="Nombre de la pista o canción a subir" value={nuevaPistaNombre} onChange={(e) => setNuevaPistaNombre(e.target.value)} className="bg-[#120f26] border border-slate-800 rounded-lg px-3 py-2 text-xs text-white flex-1 focus:outline-none" />
-                        <button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5"><Upload className="w-3.5 h-3.5" /> Upload</button>
+                        <input type="text" required placeholder="Nombre de la pista..." value={nuevaPistaNombre} onChange={(e) => setNuevaPistaNombre(e.target.value)} className="bg-[#120f26] border border-slate-800 rounded-lg px-3 py-2 text-xs text-white flex-1 focus:outline-none" />
+                        <button type="submit" className="bg-purple-600 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5"><Upload className="w-3.5 h-3.5" /> Upload</button>
                       </form>
-
                       <div className="border border-slate-900 rounded-xl overflow-hidden text-xs">
                         <div className="grid grid-cols-12 bg-[#0c091c] p-3 border-b border-slate-900 text-slate-400 font-bold">
-                          <div className="col-span-5">Título de la pista</div>
-                          <div className="col-span-3">Artista</div>
-                          <div className="col-span-2">Duración</div>
+                          <div className="col-span-6">Título</div>
+                          <div className="col-span-4">Duración</div>
                           <div className="col-span-2 text-right">Acciones</div>
                         </div>
-                        <div className="divide-y divide-slate-900">
-                          {autoDJPistas.map((pista) => (
-                            <div key={pista.id} className="grid grid-cols-12 p-3 items-center hover:bg-slate-900/30 transition">
-                              <div className="col-span-5 flex items-center gap-2 font-medium text-slate-200">
-                                <Play className="w-3 h-3 text-slate-500" /> {pista.title}
-                              </div>
-                              <div className="col-span-3 text-slate-400 truncate">{pista.artist}</div>
-                              <div className="col-span-2 text-slate-400 font-mono">{pista.duration}</div>
-                              <div className="col-span-2 text-right">
-                                <button onClick={() => eliminarPista(pista.id)} className="p-1.5 rounded bg-red-500/10 text-red-400 border border-red-500/10 hover:bg-red-500/20 transition"><Trash2 className="w-3.5 h-3.5" /></button>
-                              </div>
+                        {autoDJPistas.map((pista) => (
+                          <div key={pista.id} className="grid grid-cols-12 p-3 items-center hover:bg-slate-900/30 transition">
+                            <div className="col-span-6 flex items-center gap-2 font-medium text-slate-200"><Play className="w-3 h-3 text-slate-500" /> {pista.title}</div>
+                            <div className="col-span-4 text-slate-400 font-mono">{pista.duration}</div>
+                            <div className="col-span-2 text-right">
+                              <button onClick={() => eliminarPista(pista.id)} className="p-1.5 rounded bg-red-500/10 text-red-400 border border-red-500/10 hover:bg-red-500/20"><Trash2 className="w-3.5 h-3.5" /></button>
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
 
                   {activeDashboardSection === 'analytics' && (
-                    <div className="space-y-6">
-                      <h3 className="text-base font-bold text-white">Estadísticas y Analíticas Geográficas</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="bg-[#0c091c] border border-slate-900 p-4 rounded-xl"><span className="text-[10px] text-slate-500 uppercase font-bold">Total Listeners</span><p className="text-2xl font-black text-cyan-400 mt-1">2,983</p></div>
-                        <div className="bg-[#0c091c] border border-slate-900 p-4 rounded-xl"><span className="text-[10px] text-slate-500 uppercase font-bold">Países Conectados</span><p className="text-2xl font-black text-white mt-1">32</p></div>
-                        <div className="bg-[#0c091c] border border-slate-900 p-4 rounded-xl"><span className="text-[10px] text-slate-500 uppercase font-bold">Horas Escuchadas</span><p className="text-2xl font-black text-purple-400 mt-1">1.22 M</p></div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <h4 className="text-xs font-bold text-slate-400">Top Oyentes por Región</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                          <div className="bg-[#0c091c]/50 p-2.5 rounded-lg border border-slate-900 flex justify-between"><span>🇲🇽 México</span><span className="font-mono text-cyan-400 font-bold">1,909 Users</span></div>
-                          <div className="bg-[#0c091c]/50 p-2.5 rounded-lg border border-slate-900 flex justify-between"><span>🇺🇸 United States</span><span className="font-mono text-cyan-400 font-bold">707 Users</span></div>
-                          <div className="bg-[#0c091c]/50 p-2.5 rounded-lg border border-slate-900 flex justify-between"><span>🇬🇹 Guatemala</span><span className="font-mono text-cyan-400 font-bold">70 Users</span></div>
-                          <div className="bg-[#0c091c]/50 p-2.5 rounded-lg border border-slate-900 flex justify-between"><span>🇳🇮 Nicaragua</span><span className="font-mono text-cyan-400 font-bold">44 Users</span></div>
-                        </div>
+                    <div className="space-y-4">
+                      <h3 className="text-base font-bold text-white">Analíticas Geográficas</h3>
+                      <div className="bg-[#0c091c]/50 p-4 rounded-lg border border-slate-900 flex justify-between text-xs">
+                        <span>🇲🇽 México</span><span className="font-mono text-cyan-400 font-bold">1,909 Oyentes</span>
                       </div>
                     </div>
                   )}
 
                   {activeDashboardSection === 'monetization' && (
-                    <div className="space-y-6">
-                      <h3 className="text-base font-bold text-white">Monetización por Audio Ads</h3>
-                      <p className="text-xs text-slate-400">Los anuncios se inyectan en tu señal automáticamente cada 30 minutos a través del reproductor de tus oyentes.</p>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="bg-[#0c091c] border border-slate-900 p-4 rounded-xl">
-                          <span className="text-[10px] text-emerald-400 uppercase font-bold tracking-wider">Total Revenue Acumulado</span>
-                          <p className="text-3xl font-black text-white mt-1">$3,488.00</p>
-                        </div>
-                        <div className="bg-[#0c091c] border border-slate-900 p-4 rounded-xl">
-                          <span className="text-[10px] text-slate-500 uppercase font-bold">Impresiones de Anuncio</span>
-                          <p className="text-2xl font-mono text-slate-300 mt-1">3,100,369</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeDashboardSection === 'podcast' && (
                     <div className="space-y-4">
-                      <h3 className="text-base font-bold text-white">Grabación Automática de Programas</h3>
-                      <p className="text-xs text-slate-400">Tu señal se procesará automáticamente para crear un feed de podcast listo para ser subido a Spotify o Apple Podcasts.</p>
-                      
-                      <div className="bg-[#0c091c] border border-slate-900 p-4 rounded-xl space-y-3">
-                        <div className="flex items-center gap-2 text-xs font-bold text-amber-400"><Rss className="w-4 h-4" /> RSS Feed URL Generado</div>
-                        <div className="bg-slate-950 p-3 rounded-lg border border-slate-900 font-mono text-[11px] text-slate-300 truncate select-all">
-                          https://podcast.fredstreaming.com/feed/station_{miEstacionPropia.id}
-                        </div>
-                      </div>
+                      <h3 className="text-base font-bold text-white">Monetización</h3>
+                      <p className="text-xs text-slate-400">Anuncios de audio activos e integrados en tu señal.</p>
                     </div>
                   )}
-
                 </div>
-
               </div>
             )}
           </div>
@@ -459,13 +429,13 @@ export default function App() {
 
       </main>
 
-      {/* MINI REPRODUCTOR INFERIOR GLOBAL */}
+      {/* REPRODUCTOR INFERIOR GLOBAL */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0a0814]/95 border-t border-purple-500/10 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4 w-1/3">
           <img src={currentStation.img} alt="" className="w-10 h-10 rounded-lg object-cover shadow" />
           <div className="truncate"><h5 className="font-bold text-xs text-white truncate">{currentStation.title}</h5><p className="text-[11px] text-slate-400 truncate">{currentStation.genre}</p></div>
         </div>
-        <button onClick={() => setIsPlaying(!isPlaying)} className="w-10 h-10 rounded-full bg-white text-slate-950 flex items-center justify-center shadow-md hover:scale-105 transition">
+        <button onClick={() => setIsPlaying(!isPlaying)} className="w-10 h-10 rounded-full bg-white text-slate-950 flex items-center justify-center shadow-md">
           {isPlaying ? <Pause className="w-4 h-4 text-slate-950" /> : <Play className="w-4 h-4 text-slate-950 fill-slate-950" />}
         </button>
         <div className="w-1/3 flex justify-end items-center gap-2">
@@ -474,37 +444,29 @@ export default function App() {
         </div>
       </div>
 
-      {/* MODAL DE AUTENTICACIÓN / PASARELA DE PAGO */}
+      {/* MODAL DE AUTENTICACIÓN */}
       {showAuthModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-[#090714] border border-purple-950/40 rounded-2xl p-6 relative space-y-6">
             <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white">✕</button>
-            
             <div className="text-center space-y-1">
-              <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-0.5 rounded-full font-bold uppercase">
-                {isRegistering ? `Plan Seleccionado: ${selectedPlan?.nombre || 'Estándar'}` : 'Acceso de Emisores'}
-              </span>
-              <h3 className="text-xl font-bold text-white">
-                {isRegistering ? (selectedPlan?.soloPrueba ? 'Comienza tus 15 días gratis' : 'Configura tu cuenta') : 'Ingresa a tu Consola'}
-              </h3>
+              <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-0.5 rounded-full font-bold uppercase">{isRegistering ? 'Configurar cuenta' : 'Acceso'}</span>
+              <h3 className="text-xl font-bold text-white">{isRegistering ? 'Crea tu cuenta de Emisor' : 'Ingresa a tu Consola'}</h3>
             </div>
-
             <form onSubmit={(e) => { e.preventDefault(); setUser({ email: authEmail }); setHasPaymentMethod(true); setShowAuthModal(false); setCurrentTab('dashboard'); }} className="space-y-4">
               <input type="email" required placeholder="Tu correo electrónico" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-[#0d0a1c] border border-slate-900 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none" />
-              
               {isRegistering && (
                 <div className="bg-[#0e0b20] border border-purple-900/20 p-4 rounded-xl space-y-3">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-pink-500" /> Validación de Tarjeta de Respaldo</span>
+                  <span className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-pink-500" /> Tarjeta de Validación</span>
                   <input type="text" required placeholder="0000 0000 0000 0000" maxLength="16" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} className="w-full bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white focus:outline-none font-mono" />
                   <div className="grid grid-cols-2 gap-3">
-                    <input type="text" required placeholder="MM/AA" maxLength="5" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} className="bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white font-mono text-center" />
-                    <input type="password" required placeholder="CVC" maxLength="3" value={cardCvc} onChange={(e) => setCardCvc(e.target.value)} className="bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white font-mono text-center" />
+                    <input type="text" required placeholder="MM/AA" maxLength="5" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} className="bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white text-center font-mono" />
+                    <input type="password" required placeholder="CVC" maxLength="3" value={cardCvc} onChange={(e) => setCardCvc(e.target.value)} className="bg-[#130f2b] border border-slate-900 rounded-lg py-2 px-3 text-xs text-white text-center font-mono" />
                   </div>
                 </div>
               )}
-
-              <button type="submit" className="w-full bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black py-3 rounded-xl text-xs uppercase shadow-lg flex items-center justify-center gap-1.5">
-                <ShieldCheck className="w-4 h-4" /> {isRegistering ? (selectedPlan?.soloPrueba ? 'Activar 15 Días Gratis' : 'Completar Registro') : 'Entrar al Panel'}
+              <button type="submit" className="w-full bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black py-3 rounded-xl text-xs uppercase flex items-center justify-center gap-1.5">
+                <ShieldCheck className="w-4 h-4" /> {isRegistering ? 'Comenzar Suscripción' : 'Entrar al Panel'}
               </button>
             </form>
           </div>
