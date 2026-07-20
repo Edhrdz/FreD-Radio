@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { supabase } from './supabaseClient'; // Asegúrate de configurar tus credenciales aquí
+import { supabase } from './supabaseClient';
 import { 
   Radio, Sliders, RadioTower, Disc, Users, Globe, Music2, 
   CreditCard, ShieldCheck, Check, LogIn, DollarSign, BarChart3, 
@@ -20,14 +20,14 @@ export default function App() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [requiresCard, setRequiresCard] = useState(false); 
   const [authEmail, setAuthEmail] = useState(''); 
-  const [authPassword, setAuthPassword] = useState(''); // Añadido para registro/login real
+  const [authPassword, setAuthPassword] = useState('');
   const [user, setUser] = useState(null);
-  const [userProfile, setUserProfile] = useState(null); // Datos de suscripción del usuario
+  const [userProfile, setUserProfile] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState('');
 
-  // Formulario de Tarjeta (Simulado para pruebas o tokenización de Stripe)
+  // Formulario de Tarjeta Simulado
   const [cardNumber, setCardNumber] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCvc, setCardCvc] = useState('');
@@ -71,7 +71,6 @@ export default function App() {
     { id: 'plan_premium', nombre: 'Premium', precio: '100.00', estaciones: '5 estaciones', oyentes: 'Ilimitados', limitePistas: 1500, color: 'border-slate-800 bg-slate-900/40 hover:border-amber-500/30', soloPrueba: false }
   ];
 
-  // Escuchar estado de sesión de Supabase al cargar la app
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -94,7 +93,6 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Manejo del Reproductor de Audio
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = isMuted ? 0 : volume;
@@ -103,11 +101,9 @@ export default function App() {
     }
   }, [isPlaying, currentStation, volume, isMuted]);
 
-  // Obtener perfil de suscripción y datos de radio desde la base de datos
   const fetchUserProfile = async (userId) => {
     try {
-      // 1. Obtener perfil/suscripción
-      let { data: profile, error } = await supabase
+      let { data: profile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
@@ -117,8 +113,7 @@ export default function App() {
         setUserProfile(profile);
       }
 
-      // 2. Obtener estación de radio activa del usuario
-      let { data: radio, error: rError } = await supabase
+      let { data: radio } = await supabase
         .from('radios')
         .select('*')
         .eq('user_id', userId)
@@ -132,7 +127,6 @@ export default function App() {
     }
   };
 
-  // REGISTRO E INICIO DE SESIÓN REAL CON SUPABASE
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -140,7 +134,6 @@ export default function App() {
 
     try {
       if (isRegistering) {
-        // 1. Crear usuario en la autenticación de Supabase
         const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email: authEmail,
           password: authPassword,
@@ -149,12 +142,10 @@ export default function App() {
         if (signUpError) throw signUpError;
 
         if (authData?.user) {
-          // Determinar plan seleccionado
           const planId = selectedPlan ? selectedPlan.id : 'free_tier';
           const planName = selectedPlan ? selectedPlan.nombre : 'Ninguno';
           const isSubscribed = requiresCard || selectedPlan ? true : false;
 
-          // 2. Insertar perfil en la tabla 'profiles' (Detalle de pagos/suscripción)
           const { error: profileError } = await supabase
             .from('profiles')
             .insert([
@@ -175,7 +166,6 @@ export default function App() {
           setCurrentTab(isSubscribed ? 'dashboard' : 'home');
         }
       } else {
-        // Proceso de Login Estándar
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: authEmail,
           password: authPassword,
@@ -192,7 +182,6 @@ export default function App() {
     }
   };
 
-  // LOGIN CON GOOGLE (OAuth Real)
   const handleGoogleLogin = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -207,7 +196,6 @@ export default function App() {
     }
   };
 
-  // CERRAR SESIÓN
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setCurrentTab('home');
@@ -218,7 +206,6 @@ export default function App() {
     setIsPlaying(true);
   };
 
-  // GUARDAR EMISORA EN BASE DE DATOS REAL
   const handleCrearEstacion = async (e) => {
     e.preventDefault();
     if (!user) return;
@@ -270,9 +257,9 @@ export default function App() {
     <div className="min-h-screen bg-[#05030a] text-slate-100 font-sans antialiased pb-32">
       <audio ref={audioRef} src={currentStation.streamUrl} />
 
-      {/* HEADER GLOBAL */}
-      <header className="sticky top-0 z-40 bg-[#05030a]/90 backdrop-blur-md border-b border-purple-950/20 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-6">
+      {/* HEADER GLOBAL - OPTIMIZADO PARA MOSTRARSE SIEMPRE */}
+      <header className="sticky top-0 z-40 bg-[#05030a]/90 backdrop-blur-md border-b border-purple-950/20 px-4 md:px-6 py-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between w-full md:w-auto gap-4">
           <div onClick={() => setCurrentTab('home')} className="flex items-center gap-3 cursor-pointer shrink-0">
             <div className="bg-gradient-to-r from-fuchsia-500 via-purple-600 to-pink-500 p-2.5 rounded-xl shadow-lg">
               <Radio className="w-5 h-5 text-white" />
@@ -280,54 +267,53 @@ export default function App() {
             <span className="text-xl font-black tracking-tight text-white">FreD</span>
           </div>
 
-          {/* NAVBAR CENTRAL */}
-          <nav className="hidden lg:flex items-center gap-1.5 text-xs font-bold text-slate-400">
-            <button onClick={() => setCurrentTab('home')} className={`px-3.5 py-2 rounded-xl transition ${currentTab === 'home' ? 'text-white bg-slate-900/60' : 'hover:text-white'}`}>Home</button>
-            <button onClick={() => setCurrentTab('pricing')} className={`px-3.5 py-2 rounded-xl transition ${currentTab === 'pricing' ? 'text-white bg-slate-900/60' : 'hover:text-white'}`}>Planes y Precios</button>
+          {/* NAVBAR CENTRAL - Totalmente visible en todas las pantallas */}
+          <nav className="flex flex-wrap items-center gap-1 text-xs font-bold text-slate-400">
+            <button onClick={() => setCurrentTab('home')} className={`px-2.5 py-2 rounded-xl transition ${currentTab === 'home' ? 'text-white bg-slate-900/60' : 'hover:text-white'}`}>Home</button>
+            <button onClick={() => setCurrentTab('pricing')} className={`px-2.5 py-2 rounded-xl transition ${currentTab === 'pricing' ? 'text-white bg-slate-900/60' : 'hover:text-white'}`}>Planes y Precios</button>
             
             <div className="h-4 w-[1px] bg-slate-800 mx-1"></div>
 
-            <button onClick={() => setCurrentTab('discover')} className={`px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 ${currentTab === 'discover' ? 'text-white bg-[#16122c] shadow' : 'hover:text-white'}`}>
+            <button onClick={() => setCurrentTab('discover')} className={`px-2.5 py-2 rounded-xl transition flex items-center gap-1 ${currentTab === 'discover' ? 'text-white bg-[#16122c] shadow' : 'hover:text-white'}`}>
               <Compass className="w-3.5 h-3.5 text-purple-400" /> Descubrir
             </button>
-            <button onClick={() => setCurrentTab('library')} className={`px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 ${currentTab === 'library' ? 'text-white bg-[#16122c] shadow' : 'hover:text-white'}`}>
+            <button onClick={() => setCurrentTab('library')} className={`px-2.5 py-2 rounded-xl transition flex items-center gap-1 ${currentTab === 'library' ? 'text-white bg-[#16122c] shadow' : 'hover:text-white'}`}>
               <Library className="w-3.5 h-3.5 text-pink-400" /> Biblioteca
             </button>
-            <button onClick={() => setCurrentTab('search_tab')} className={`px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 ${currentTab === 'search_tab' ? 'text-white bg-[#16122c] shadow' : 'hover:text-white'}`}>
+            <button onClick={() => setCurrentTab('search_tab')} className={`px-2.5 py-2 rounded-xl transition flex items-center gap-1 ${currentTab === 'search_tab' ? 'text-white bg-[#16122c] shadow' : 'hover:text-white'}`}>
               <Search className="w-3.5 h-3.5 text-cyan-400" /> Buscar
             </button>
 
-            {/* Muestra el Panel solo si el usuario inició sesión */}
             {user && (
               <>
                 <div className="h-4 w-[1px] bg-slate-800 mx-1"></div>
-                <button onClick={() => setCurrentTab('dashboard')} className={`px-3.5 py-2 rounded-xl border border-purple-500/30 text-purple-400 flex items-center gap-1.5 ${currentTab === 'dashboard' ? 'bg-purple-950/30 text-white' : ''}`}><Sliders className="w-3.5 h-3.5" /> Panel Locutor</button>
+                <button onClick={() => setCurrentTab('dashboard')} className={`px-2.5 py-2 rounded-xl border border-purple-500/30 text-purple-400 flex items-center gap-1 ${currentTab === 'dashboard' ? 'bg-purple-950/30 text-white' : ''}`}><Sliders className="w-3.5 h-3.5" /> Panel Locutor</button>
               </>
             )}
           </nav>
         </div>
 
         {/* ACCIONES DERECHAS */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
           {user ? (
             <div className="flex items-center gap-3">
-              <span className="text-xs bg-purple-950/40 border border-purple-500/20 px-4 py-2 rounded-full text-purple-300 font-medium">
+              <span className="text-[11px] bg-purple-950/40 border border-purple-500/20 px-3.5 py-2 rounded-full text-purple-300 font-medium">
                 {user.email} {userProfile?.subscription_active && `[${userProfile?.plan_name}]`}
               </span>
-              <button onClick={handleLogout} className="text-xs text-slate-400 hover:text-white px-2">Salir</button>
+              <button onClick={handleLogout} className="text-xs text-slate-400 hover:text-white px-1">Salir</button>
             </div>
           ) : (
-            <>
-              <button onClick={() => { setIsRegistering(false); setRequiresCard(false); setAuthError(''); setShowAuthModal(true); }} className="text-xs font-bold text-slate-300 hover:text-white transition px-3 py-2 flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
+              <button onClick={() => { setIsRegistering(false); setRequiresCard(false); setAuthError(''); setShowAuthModal(true); }} className="text-xs font-bold text-slate-300 hover:text-white transition px-2 py-2 flex items-center gap-1">
                 <LogIn className="w-3.5 h-3.5 text-purple-400" /> Iniciar Sesión
               </button>
-              <button onClick={() => { setIsRegistering(true); setRequiresCard(false); setSelectedPlan(null); setAuthError(''); setShowAuthModal(true); }} className="text-xs font-bold bg-slate-900 border border-slate-800 text-slate-200 px-4 py-2 rounded-xl hover:border-purple-500/40 transition flex items-center gap-1.5">
+              <button onClick={() => { setIsRegistering(true); setRequiresCard(false); setSelectedPlan(null); setAuthError(''); setShowAuthModal(true); }} className="text-xs font-bold bg-slate-900 border border-slate-800 text-slate-200 px-3 py-2 rounded-xl hover:border-purple-500/40 transition flex items-center gap-1">
                 <UserPlus className="w-3.5 h-3.5 text-pink-400" /> Registrarse
               </button>
-              <button onClick={() => { setIsRegistering(true); setRequiresCard(true); setSelectedPlan(tablaPlanes[0]); setAuthError(''); setShowAuthModal(true); }} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black px-5 py-2.5 rounded-full text-xs tracking-wide shadow-md hover:opacity-90 transition">
+              <button onClick={() => { setIsRegistering(true); setRequiresCard(true); setSelectedPlan(tablaPlanes[0]); setAuthError(''); setShowAuthModal(true); }} className="bg-gradient-to-r from-purple-400 via-pink-500 to-fuchsia-500 text-slate-950 font-black px-4 py-2.5 rounded-full text-[11px] tracking-wide shadow-md hover:opacity-90 transition">
                 Empezar Prueba Gratis
               </button>
-            </>
+            </div>
           )}
         </div>
       </header>
@@ -354,6 +340,106 @@ export default function App() {
                 </div>
               </div>
             </section>
+
+            <section className="space-y-6">
+              <h3 className="text-xl font-black text-white text-center">Infraestructura Diseñada para Emisores</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-2">
+                  <Zap className="w-5 h-5 text-purple-400" />
+                  <h4 className="font-bold text-white text-xs">Transmisión Inmediata</h4>
+                  <p className="text-[11px] text-slate-400">Soporte nativo para OBS, Butt y Mixxx.</p>
+                </div>
+                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-2">
+                  <Disc className="w-5 h-5 text-pink-400" />
+                  <h4 className="font-bold text-white text-xs">AutoDJ en la Nube</h4>
+                  <p className="text-[11px] text-slate-400">Automatiza listas las 24 horas del día.</p>
+                </div>
+                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-2">
+                  <BarChart3 className="w-5 h-5 text-cyan-400" />
+                  <h4 className="font-bold text-white text-xs">Métricas de Oyentes</h4>
+                  <p className="text-[11px] text-slate-400">Analíticas en tiempo real de tu audiencia.</p>
+                </div>
+                <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-2xl space-y-2">
+                  <DollarSign className="w-5 h-5 text-emerald-400" />
+                  <h4 className="font-bold text-white text-xs">Monetización</h4>
+                  <p className="text-[11px] text-slate-400">Inyección inteligente de anuncios de audio.</p>
+                </div>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {/* VISTA: DESCUBRIR */}
+        {currentTab === 'discover' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xl font-black text-white flex items-center gap-2"><Compass className="w-5 h-5 text-purple-400" /> Emisoras Destacadas</h3>
+              <p className="text-xs text-slate-400">Escucha los servidores con mayor flujo de oyentes en tiempo real.</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {estacionesFijas.map((est) => (
+                <div key={est.id} className="bg-slate-900/40 border border-slate-900 p-4 rounded-2xl flex items-center justify-between group hover:border-purple-500/20 transition">
+                  <div className="flex items-center gap-3">
+                    <img src={est.img} alt="" className="w-11 h-11 rounded-xl object-cover" />
+                    <div>
+                      <h4 className="font-bold text-xs text-white truncate max-w-[120px]">{est.title}</h4>
+                      <p className="text-[10px] text-slate-400 truncate">{est.genre}</p>
+                      <span className="text-[9px] font-mono text-purple-400 flex items-center gap-1 mt-0.5"><Users className="w-2.5 h-2.5" /> {est.oyentes}</span>
+                    </div>
+                  </div>
+                  <button onClick={() => cambiarEstacionGlobal(est)} className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-200 group-hover:bg-white group-hover:text-slate-950 transition">
+                    {currentStation.id === est.id && isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* VISTA: BIBLIOTECA */}
+        {currentTab === 'library' && (
+          <div className="space-y-4">
+            <h3 className="text-xl font-black text-white flex items-center gap-2"><Library className="w-5 h-5 text-pink-400" /> Tu Biblioteca</h3>
+            <p className="text-xs text-slate-400">Tus estaciones guardadas y favoritas aparecerán en este bloque.</p>
+            <div className="bg-slate-900/20 border border-dashed border-slate-800 rounded-xl p-12 text-center text-xs text-slate-500">
+              Sintoniza cyber-emisoras en la pestaña superior "Descubrir" para guardar elementos aquí.
+            </div>
+          </div>
+        )}
+
+        {/* VISTA: BUSCAR */}
+        {currentTab === 'search_tab' && (
+          <div className="space-y-6">
+            <div className="max-w-md relative">
+              <Search className="w-4 h-4 text-slate-500 absolute left-4 top-3.5" />
+              <input 
+                type="text" 
+                placeholder="Buscar por nombre de radio o género musical..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-[#0c091c] border border-slate-800 rounded-xl py-3 pl-11 pr-4 text-xs text-white focus:outline-none focus:border-purple-500/50"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {estacionesFiltradas.length > 0 ? (
+                estacionesFiltradas.map((est) => (
+                  <div key={est.id} className="bg-slate-900/40 border border-slate-900 p-4 rounded-2xl flex items-center justify-between group hover:border-purple-500/20 transition">
+                    <div className="flex items-center gap-3">
+                      <img src={est.img} alt="" className="w-11 h-11 rounded-xl object-cover" />
+                      <div>
+                        <h4 className="font-bold text-xs text-white truncate max-w-[120px]">{est.title}</h4>
+                        <p className="text-[10px] text-slate-400 truncate">{est.genre}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => cambiarEstacionGlobal(est)} className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-200 group-hover:bg-white group-hover:text-slate-950 transition">
+                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-slate-500 col-span-4">No se encontraron resultados.</p>
+              )}
+            </div>
           </div>
         )}
 
@@ -379,7 +465,7 @@ export default function App() {
                       <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-purple-400" /> <strong>{plan.limitePistas} pistas</strong> AutoDJ</li>
                     </ul>
                   </div>
-                  <button onClick={() => { setSelectedPlan(plan); setIsRegistering(true); setRequiresCard(true); setAuthError(''); setShowAuthModal(true); }} className={`w-full font-black py-3 rounded-xl text-xs uppercase tracking-wider transition ${plan.soloPrueba ? 'bg-white text-slate-950 hover:bg-slate-200' : 'bg-slate-900 text-white border border-slate-800 hover:border-purple-500/40'}`}>
+                  <button onClick={() => { setSelectedPlan(plan); setIsRegistering(true); setRequiresCard(plan.soloPrueba); setShowAuthModal(true); }} className={`w-full font-black py-3 rounded-xl text-xs uppercase tracking-wider transition ${plan.soloPrueba ? 'bg-white text-slate-950 hover:bg-slate-200' : 'bg-slate-900 text-white border border-slate-800 hover:border-purple-500/40'}`}>
                     {plan.soloPrueba ? 'Prueba Gratis 15 días' : `Adquirir ${plan.nombre}`}
                   </button>
                 </div>
@@ -388,7 +474,7 @@ export default function App() {
           </div>
         )}
 
-        {/* VISTA: PANEL DE LOCUTOR (DASHBOARD SYNCED) */}
+        {/* VISTA: PANEL DE LOCUTOR */}
         {currentTab === 'dashboard' && user && (
           <div className="space-y-6">
             <div className="border-b border-slate-900 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -396,8 +482,6 @@ export default function App() {
                 <h2 className="text-xl font-black text-white flex items-center gap-2"><LayoutDashboard className="w-5 h-5 text-purple-400" /> Consola de Control</h2>
                 <p className="text-xs text-slate-400">Gestiona tu estación, automatizaciones de AutoDJ y servidores de audio.</p>
               </div>
-              
-              {/* Bloque Informativo de Suscripción en el Detalle del Dashboard */}
               <div className="bg-[#0f0b24] border border-purple-500/20 px-4 py-2.5 rounded-xl text-xs space-y-0.5">
                 <div className="text-slate-400">Suscripción activa: <span className="text-pink-400 font-bold">{userProfile?.plan_name || 'Ninguno (Demo)'}</span></div>
                 <div className="text-[11px] text-slate-500 flex items-center gap-1">Estado de Pago: <span className="text-emerald-400 flex items-center gap-0.5"><ShieldCheck className="w-3 h-3" /> Al día</span></div>
@@ -481,7 +565,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* MODAL DE AUTENTICACIÓN CON LÓGICA DE BACKEND COMPLETA */}
+      {/* MODAL DE AUTENTICACIÓN */}
       {showAuthModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-[#090714] border border-purple-950/40 rounded-2xl p-6 relative space-y-5">
@@ -506,7 +590,6 @@ export default function App() {
                 <input type="password" required placeholder="••••••••" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-[#0d0a1c] border border-slate-900 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none" />
               </div>
               
-              {/* Tarjeta condicional para suscripciones */}
               {isRegistering && requiresCard && (
                 <div className="bg-[#0e0b20] border border-purple-900/20 p-4 rounded-xl space-y-3">
                   <span className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-pink-500" /> Datos de Facturación (Simulado)</span>
